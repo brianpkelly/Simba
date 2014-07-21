@@ -53,7 +53,7 @@ def Simulation(dict_in):
         assert "gearing" in currentData, logging.critical("%s is missing data: gearing" % file)
         logging.info("gearing found")
         gearing = currentData["gearing"]
-        
+
         assert "rider_mass" in currentData, logging.critical("%s is missing data: rider_mass" % file)
         logging.info("rider_mass found")
         rider_mass = currentData["rider_mass"] #kg
@@ -70,10 +70,6 @@ def Simulation(dict_in):
         logging.info("air_resistance found")
         air_resistance = currentData["air_resistance"]
         
-        assert "air_density" in currentData, logging.critical("%s is missing data: air_density" % file)
-        logging.info("air_density found")
-        air_density = currentData["air_density"]
-        
         assert "frontal_area" in currentData, logging.critical("%s is missing data: frontal_area" % file)
         logging.info("frontal_area found")
         frontal_area =  currentData["frontal_area"] #m^2
@@ -81,22 +77,18 @@ def Simulation(dict_in):
         assert "rolling_resistance" in currentData, logging.critical("%s is missing data: rolling_resistance" % file)
         logging.info("rolling_resistance found")
         rolling_resistance = currentData["rolling_resistance"]
-        
-        assert "top_torque" in currentData, logging.critical("%s is missing data: top_torque" % file)
-        logging.info("top_torque found")
-        top_torque = currentData["top_torque"] #nm
+
+        assert "top_motor_current" in currentData, logging.critical("%s is missing data: top_motor_current" % file)
+        logging.info("top_motor_current found")
+        top_motor_current = currentData['top_motor_current'] #amps        
         
         assert "top_rpm" in currentData, logging.critical("%s is missing data: top_rpm" % file)
         logging.info("top_rpm found")
-        top_rpm = currentData["top_rpm"]
-        
+        top_rpm = currentData["top_rpm"]    
+            
         assert "motor_top_power" in currentData, logging.critical("%s is missing data: motor_top_power" % file)
         logging.info("motor_top_power found")
         motor_top_power = currentData["motor_top_power"]
-        
-        assert "chain_efficiency" in currentData, logging.critical("%s is missing data: chain_efficiency" % file)
-        logging.info("chain_efficiency found")
-        chain_efficiency = currentData["chain_efficiency"]
         
         assert "battery_efficiency" in currentData, logging.critical("%s is missing data: battery_efficiency" % file)
         logging.info("battery_efficiency found")
@@ -108,11 +100,7 @@ def Simulation(dict_in):
         
         assert "motor_rpm_constant" in currentData, logging.critical("%s is missing data: motor_rpm_constant" % file)
         logging.info("motor_rpm_constant found")
-        motor_rpm_constant = currentData["motor_rpm_constant"] #rpm to voltage dc constant of motor. rpm/volt
-
-        #assert "top_power" in currentData, logging.critical("%s is missing data: top_power" % file)
-        #logging.info("top_power found")
-        #top_power = currentData["top_power"]        
+        motor_rpm_constant = currentData["motor_rpm_constant"] #rpm to voltage dc constant of motor. rpm/volt      
         
         assert "motor_thermal_conductivity" in currentData, logging.critical("%s is missing data: motor_thermal_conductivity" % file)
         logging.info("motor_thermal_conductivity")
@@ -129,7 +117,7 @@ def Simulation(dict_in):
         assert "max_motor_temp" in currentData, logging.critical("%s is missing data: max_motor_temp" % file)
         logging.info("max_motor_temp")
         max_motor_temp = currentData["max_motor_temp"]
-
+    
         assert "series_cells" in currentData, logging.critical("%s is missing data: series_cells" % file)
         logging.info("series_cells found")
         series_cells = currentData["series_cells"]
@@ -173,29 +161,33 @@ def Simulation(dict_in):
         assert "lean_angle_lookup" in currentData, logging.critical("%s is missing data: lean_angle_lookup" % file)
         logging.info("lean_angle_lookup found")
         lean_angle_lookup = currentData["lean_angle_lookup"][0]
-	
+        
+        assert "chain_efficiency_lookup" in currentData, logging.critical("%s is missing data: chain_efficiency_lookup" % file)
+        logging.info("chain_efficiency_lookup found")
+        chain_efficiency_lookup = currentData["chain_efficiency_lookup"][0]
+
+        assert "corner_radius_lookup" in currentData, logging.critical("%s is missing data: corner_radius_lookup" % file)
+        logging.info("corner_radius_lookup found")
+        corner_radius_lookup = currentData["corner_radius_lookup"][0]
+ 
         assert "tyreA" in currentData, logging.critical("%s is missing data: tyreA" % file)
         logging.info("tyreA found")
         tyreA = currentData["tyreA"][0]
-       
         #tyreA = -2.069641313760728140e-05
 	
         assert "tyreB" in currentData, logging.critical("%s is missing data: tyreB" % file)
         logging.info("tyreB found")
         tyreB = currentData["tyreB"][0]
-
         #tyreB = 6.386679031823000125e-06
 	
         assert "tyreC" in currentData, logging.critical("%s is missing data: tyreC" % file)
         logging.info("tyreC found")
         TyreC = currentData["tyreC"][0]
-
         #TyreC = 3.197376543933548310e-01
-	
+        
         assert "top_lean_angle" in currentData, logging.critical("%s is missing data: top_lean_angle" % file)
         logging.info("top_lean_angle found")
         top_lean_angle = currentData["top_lean_angle"][0]
-        
         
         #top_lean_angle = 45
         
@@ -208,6 +200,7 @@ def Simulation(dict_in):
         #motor_top_force = (top_torque * gearing) / wheel_radius
         drag_area = frontal_area * air_resistance
         mass = rider_mass + bike_mass
+        top_torque = top_motor_current * motor_torque_constant
 
         #Arrays (output)
         time = np.zeros((steps+1,tests),dtype=float)
@@ -228,6 +221,7 @@ def Simulation(dict_in):
         slope = np.zeros((steps+1,tests),dtype=float)
         incline = np.zeros((steps+1,tests),dtype=float)
         rolling = np.zeros((steps+1,tests),dtype=float)
+        air_density = np.zeros((steps+1,tests),dtype=float)
 
         motor_rpm = np.zeros((steps+1,tests),dtype=float)
         motor_torque = np.zeros((steps+1,tests),dtype=float)
@@ -270,6 +264,7 @@ def Simulation(dict_in):
         
         wheel_radius = np.zeros((steps+1,tests),dtype=float)
         lean_angle_limit = np.zeros((steps+1,tests),dtype=float)
+        lateral_acc = np.zeros((steps+1, tests), dtype=float)        
         
         #Lookups
         dist_to_speed_lookup = "Lookup Files\\" + dist_to_speed_lookup
@@ -369,7 +364,6 @@ def Simulation(dict_in):
             wx.CallAfter(pub.sendMessage, "AddStatus", msg)
             raise Exception("Unable to load \'" + motor_controller_eff_lookup + "\'")
             
-
         x = n[:,0].astype(np.float)
         y = n[:,1].astype(np.float)
         z = n[:,2].astype(np.float)
@@ -399,6 +393,39 @@ def Simulation(dict_in):
         motor_eff_grid = griddata(points, values, (grid_x, grid_y), method='linear')
 
 
+        #chain efficiency
+        #rpm to chain efficiency %
+        chain_efficiency_lookup = "Lookup Files\\" + chain_efficiency_lookup
+        try:
+            n = np.loadtxt(chain_efficiency_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
+            logging.info("%s loaded", chain_efficiency_lookup)
+            
+        except IOError:
+            logging.critical("Unable to load %s", chain_efficiency_lookup)
+            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + chain_efficiency_lookup + " from " + file + ". Make sure the file exists and is not open."
+            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            raise Exception("Unable to load \'" + chain_efficiency_lookup + "\'")
+        n = np.loadtxt(chain_efficiency_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
+        x = n[:,0].astype(np.float)
+        y = n[:,1].astype(np.float)
+        chain_efficiency_map = interp1d(x,y)
+
+        #distance to corner radius lookup
+        corner_radius_lookup = "Lookup Files\\" + corner_radius_lookup
+        try:
+            n = np.loadtxt(corner_radius_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
+            logging.info("%s loaded", corner_radius_lookup)
+            
+        except IOError:
+            logging.critical("Unable to load %s", corner_radius_lookup)
+            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + corner_radius_lookup + " from " + file + ". Make sure the file exists and is not open."
+            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            raise Exception("Unable to load \'" + corner_radius_lookup + "\'")
+        n = np.loadtxt(corner_radius_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
+        x = n[:,0].astype(np.float)
+        y = n[:,1].astype(np.float)
+        cornerradius = interp1d(x,y)
+
         message = '';        
         
         #Make sure parameters don't extend lookups
@@ -426,9 +453,11 @@ def Simulation(dict_in):
         (x,y) = motor_eff_grid.shape
         if y-1 <  top_torque:
             top_torque = y-1
+            top_motor_current = (y-1)/motor_torque_constant
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: top_torque greater than motor efficiency look up --- '
-            message += 'top_torque changed to ' + repr(top_torque) + " for file " + file
+            message += 'top_torque changed to ' + repr(top_torque) + ', top_motor_current changed to ' + repr(top_motor_current)
+            message += " for file " + file
             wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         if x-1 <  top_rpm:
@@ -441,9 +470,13 @@ def Simulation(dict_in):
         (x,y) = motor_controller_eff_grid.shape
         if y-1 <  top_torque/motor_torque_constant:
             top_torque = (y-1) * motor_torque_constant
+            top_motor_current = y-1
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: possible arms (from top_torque and motor torque constant) is greater than motor controller efficiency look up --- '
             message += 'top_torque changed to ' + repr(top_torque) + ' for file ' + file
+            message = datetime.now().strftime('%H:%M:%S') + ": "
+            message += 'WARNING: possible arms (from top_motor_current and motor torque constant) is greater than motor controller efficiency look up --- '
+            message += 'top_motor_current changed to ' + repr(top_motor_current) + ' for file ' + file
             wx.CallAfter(pub.sendMessage, "AddStatus", message)
     
         if x-1 <  (top_rpm/(motor_rpm_constant)*(1/(sqrt2))) :
@@ -459,7 +492,21 @@ def Simulation(dict_in):
             message += 'WARNING: max_distance_travel greater than lean angle to distance look up --- '
             message += 'max_distance_travel changed to ' + repr(max_distance_travel) + ' for file ' + file
             wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            
+        if np.max(chain_efficiency_map.x) < top_rpm:
+            top_rpm = np.max(chain_efficiency_map.x)
+            message = datetime.now().strftime('%H:%M:%S') + ": "
+            message += 'WARNING: top rpm is greater than the chain efficiency look up --- '
+            message += 'top rpm changed to ' + repr(top_rpm) + ' for file ' + file
+            wx.CallAfter(pub.sendMessage, "AddStatus", message)
         
+        if np.max(cornerradius.x) < max_distance_travel:
+            max_distance_travel = np.max(cornerradius.x)
+            message = datetime.now().strftime('%H:%M:%S') + ": "
+            message += 'WARNING: max_distance_travel is greater than cornerradius to distance look up --- '
+            message += 'max_distance_travel changed to ' + repr(max_distance_travel) + ' for file ' + file
+            wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            
         wx.CallAfter(pub.sendMessage, "update", "")   
         '''
         if len(message) > 1:
@@ -486,8 +533,9 @@ def Simulation(dict_in):
         #Find Force at point n+1
         def Force(s,n):
             acceleration[n+1] = mass*((s - speed[n])/step)
-            drag[n+1] = 0.5 * drag_area*air_density*s**2
             altitude[n+1] = distancetoaltitude_lookup(distance[n+1])
+            air_density[n+1] = (((altitude[n+1]/1000)-44.3308)/-42.2665) ** 4.25588
+            drag[n+1] = 0.5 * drag_area*air_density[n+1]*s**2
             slope[n+1] = (altitude[n+1] - altitude[n])/(distance[n+1] - distance[n])    
             incline[n+1] = mass*gravity*slope[n+1]
             rolling[n+1] = mass*gravity*rolling_resistance
@@ -503,14 +551,14 @@ def Simulation(dict_in):
             motor_efficiency[n+1] = motor_eff_grid[np.int(np.around(motor_rpm[n+1]))][np.int(np.around(motor_torque[n+1]))]
             motor_controller_efficiency[n+1] = motor_controller_eff_grid[np.int(np.around(vrms[n+1]))][np.int(np.around(arms[n+1]))]
             
-            chain_power[n+1] = (p/(chain_efficiency))
+            chain_power[n+1] = (p/(chain_efficiency_map(motor_rpm[[n+1]])))
             motor_power[n+1] = (chain_power[n+1]/(motor_efficiency[n+1]))
             motor_controller_power[n+1] = (motor_power[n+1]/(motor_controller_efficiency[n+1]))
             battery_power[n+1] = (motor_controller_power[n+1]/(battery_efficiency))
             
             motor_loss[n+1] = motor_power[n+1]*(1-motor_efficiency[n+1])
             motor_controller_loss[n+1] = motor_controller_power[n+1]*(1-motor_controller_efficiency[n+1])
-            chain_loss[n+1] = chain_power[n+1]*(1-chain_efficiency)
+            chain_loss[n+1] = chain_power[n+1]*(1-chain_efficiency_map(motor_rpm[n+1]))
             battery_loss[n+1] = battery_power[n+1]*(1-battery_efficiency)
             return battery_power[n+1]
  
@@ -520,7 +568,7 @@ def Simulation(dict_in):
              
         #Top force (allows for expandsion to more than one top forces)
         def Top_force(n):
-            return ((throttlemap(motor_rpm[n]) * motor_torque_constant) * gearing) / wheel_radius[n+1]
+            return ((throttlemap(motor_rpm[n]) * top_motor_current * motor_torque_constant) * gearing) / wheel_radius[n+1]
                 
         #Top Speed(allows for expandsion to one top speeds)
         def Top_speed(n):
@@ -569,6 +617,7 @@ def Simulation(dict_in):
         distance[0] = .1 #can't be 0 because not in look up
         speed[0] = .1 #can't be 0 or the bike will never start moving
         altitude[0] = distancetoaltitude_lookup(1)
+        air_density[0] = (((altitude[0]/1000)-44.3308)/-42.2665) ** 4.25588
         voltage[0] = soctovoltage_lookup(0) * series_cells
         
 
@@ -640,6 +689,7 @@ def Simulation(dict_in):
                 #Find amphours and energy
                 amphour[n+1] = amphour[n] + (total_power[n+1]/voltage[n+1])*(step/(60.0*60.0))
                 energy[n+1] = energy[n] + total_power[n+1]*(step/(60.0*60.0))
+                lateral_acc[n+1] = speed[n+1]**2/cornerradius(distance[n+1])
                 
             return steps
            #plot each loop here
@@ -668,11 +718,13 @@ def Simulation(dict_in):
         newData["Power (Watts)"] = (power[:end])
         newData["Energy (Wh)"] = (energy[:end])
         newData["Acceleration (N)"] = (acceleration[:end])
+        newData["Lateral Acceleration (N)"] = (lateral_acc[:end])
         newData["Drag (N)"] = (drag[:end])
         newData["Altitude (Meters)"] = (altitude[:end])
         newData["Slope (Ratio)"] = (slope[:end])
         newData["Incline (N)"] = (incline[:end])
         newData["Rolling (N)"] = (rolling[:end])
+        newData["Air Density(kg/m^3)"] = (air_density[:end])
         newData["Motor RPM"] = (motor_rpm[:end])
         newData["Motor Torque (Nm)"] = (motor_torque[:end])      
         newData["Motor Loss (Watts)"] = (motor_loss[:end])
@@ -715,12 +767,14 @@ def Simulation(dict_in):
         newData["% Motor Thermal Limit"] = (np.mean(motor_thermal_limit[:end])*100)
         newData["% Lean Angle Limit"] = (np.mean(lean_angle_limit[:end])*100)
 
+        newData["Finish Time (s)"] = time[end][0]
         newData["Average MPH"] = (round(np.mean(speed[:end])*2.23,3))
         newData["Max MPH"] = (round(np.max(speed[:end])*2.23,3))
         newData["Average Power (Watts)"] = (round(np.mean(power[:end]),3))
         newData["Max Power (Watts)"] = (round(np.max(power),3))
         newData["Max Energy (Wh)"] = (round(np.max(energy),3))
         newData["Max Amphours"] = (round(np.max(amphour),3))
+        newData['Max Lateral Acceleration (N)'] = np.nanmax(lateral_acc)
         
  
 
