@@ -33,10 +33,10 @@ def Simulation(dict_in):
             if np.size(currentData[key]) > 1:
                 logging.critical("Parameter %s in %s has more than 1 value",key,file)
                 msg = datetime.now().strftime('%H:%M:%S') + ": " + "Parameter " + key + " in " + file + " has more than 1 value! Each parameter may only have 1 value"
-                wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+                #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
                 raise Exception("One or more params in " + file + " have two or more values. Each param can only have one value")
         
-        wx.CallAfter(pub.sendMessage, "update", "")
+        #wx.CallAfter(pub.sendMessage, "update", "")
         tests = 1
         #parameters
         logging.info("Checking to make sure file %s has needed parameters...", file)
@@ -189,7 +189,178 @@ def Simulation(dict_in):
         logging.info("top_lean_angle found")
         top_lean_angle = currentData["top_lean_angle"][0]
         
+        assert "temp_lapse_rate" in currentData, logging.critical("%s is missing data: temp_lapse_rate" % file)
+        logging.info("temp_lapse_rate")
+        temp_lapse_rate = currentData["temp_lapse_rate"][0]
+        
+        assert "sea_level_pressure" in currentData, logging.critical("%s is missing data: sea_level_pressure" % file)
+        logging.info("sea_level_pressure")
+        sea_level_pressure = currentData["sea_level_pressure"][0]
+        
         #top_lean_angle = 45
+        #temp_lapse_rate = 6.5
+        #sea_level_pressure = 101325
+        
+#Lookups
+        dist_to_speed_lookup = "Lookup Files\\" + dist_to_speed_lookup
+        try:
+            n = np.loadtxt(dist_to_speed_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
+            '''
+            logging.info("%s loaded", dist_to_speed_lookup)
+            msg = datetime.now().strftime('%H:%M:%S') + ": " + dist_to_speed_lookup + " loaded"
+            pub.sendMessage(("AddStatus"), msg)             
+            '''
+        except IOError:
+            logging.critical("Unable to load %s", dist_to_speed_lookup)
+            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + dist_to_speed_lookup + " from " + file+ ". Make sure the file exists and is not open."
+            #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            raise Exception("Unable to load \'" + dist_to_speed_lookup + "\'")
+
+        x = n[:,0].astype(np.float)
+        y = n[:,1].astype(np.float)
+        #x = np.array([0,3220])
+	   #y = np.array([1000,1000])
+        distancetospeed_lookup = interp1d(x,y)
+          
+
+            
+        #Lookups
+        soc_to_voltage_lookup = "Lookup Files\\" + soc_to_voltage_lookup
+        try:
+            n = np.loadtxt(soc_to_voltage_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
+            logging.info("%s loaded", soc_to_voltage_lookup)
+
+        except IOError:
+            logging.critical("Unable to load %s", soc_to_voltage_lookup)
+            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + soc_to_voltage_lookup + " from " + file + ". Make sure the file exists and is not open."
+            #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            raise Exception("Unable to load \'" + soc_to_voltage_lookup + "\'")
+            
+        x = n[:,0].astype(np.float)
+        y = n[:,1].astype(np.float)
+
+        soctovoltage_lookup = interp1d(x,y)
+       
+
+        
+        dist_to_alt_lookup = "Lookup Files\\" + dist_to_alt_lookup
+        try:
+            n = np.loadtxt(dist_to_alt_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
+            logging.info("%s loaded", dist_to_alt_lookup)
+            
+        except IOError:
+            logging.critical("Unable to load %s", dist_to_alt_lookup)
+            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + dist_to_alt_lookup + " from " + file + ". Make sure the file exists and is not open."
+            #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            raise Exception("Unable to load \'" + dist_to_alt_lookup + "\'")
+        x = n[:,0].astype(np.float)
+        y = n[:,1].astype(np.float)
+
+        distancetoaltitude_lookup = interp1d(x,y)
+        
+        
+        throttlemap_lookup = "Lookup Files\\" + throttlemap_lookup
+        try:
+            n = np.loadtxt(throttlemap_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
+            logging.info("%s loaded", throttlemap_lookup)
+            
+        except IOError:
+            logging.critical("Unable to load %s", throttlemap_lookup)
+            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + throttlemap_lookup + " from " + file + ". Make sure the file exists and is not open."
+            #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            raise Exception("Unable to load \'" + throttlemap_lookup + "\'")
+        x = n[:,0].astype(np.float)
+        y = n[:,1].astype(np.float)
+        throttlemap = interp1d(x,y)        
+        
+        #distance_to_lean_angle_lookup
+        lean_angle_lookup = "Lookup Files\\" + lean_angle_lookup
+        try:
+            n = np.loadtxt(lean_angle_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
+            logging.info("%s loaded", lean_angle_lookup)
+    
+        except IOError:
+            logging.critical("Unable to load %s", lean_angle_lookup)
+            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + lean_angle_lookup + " from " + file + ". Make sure the file exists and is not open."
+            #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            raise Exception("Unable to load \'" + lean_angle_lookup + "\'")
+        x = n[:,0].astype(np.float)
+        y = n[:,1].astype(np.float)
+        lean_angle_lookup = interp1d(x,y)
+   
+        motor_controller_eff_lookup = "Lookup Files\\" + motor_controller_eff_lookup
+        try:
+            n = np.loadtxt(motor_controller_eff_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
+            logging.info("%s loaded", motor_controller_eff_lookup)
+            
+        except IOError:
+            logging.critical("Unable to load %s", motor_controller_eff_lookup)
+            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + motor_controller_eff_lookup + " from " + file + ". Make sure the file exists and is not open."
+            #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            raise Exception("Unable to load \'" + motor_controller_eff_lookup + "\'")
+            
+        x = n[:,0].astype(np.float)
+        y = n[:,1].astype(np.float)
+        z = n[:,2].astype(np.float)
+        points = np.transpose(np.array([x,y]))
+        values = np.array(z)
+        grid_x, grid_y = np.mgrid[np.min(x):np.max(x)+1, np.min(y):np.max(y)+1]
+        motor_controller_eff_grid = griddata(points, values, (grid_x, grid_y), method='linear')
+
+        
+        motor_eff_lookup = "Lookup Files\\" + motor_eff_lookup
+        try:
+            n = np.loadtxt(motor_eff_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
+            logging.info("%s loaded", motor_eff_lookup)
+            
+        except IOError:
+            logging.critical("Unable to load %s", motor_eff_lookup)
+            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + motor_eff_lookup + " from " + file + ". Make sure the file exists and is not open."
+            #wx.CallAfter(pub.sendMessage, "AddStatus", msg) 
+            raise Exception("Unable to load \'" + motor_eff_lookup + "\'")
+
+        x = n[:,0].astype(np.float)
+        y = n[:,1].astype(np.float)
+        z = n[:,2].astype(np.float)
+        points = np.transpose(np.array([x,y]))
+        values = np.array(z)
+        grid_x, grid_y = np.mgrid[np.min(x):np.max(x)+1, np.min(y):np.max(y)+1]
+        motor_eff_grid = griddata(points, values, (grid_x, grid_y), method='linear')
+
+
+        #chain efficiency
+        #rpm to chain efficiency %
+        chain_efficiency_lookup = "Lookup Files\\" + chain_efficiency_lookup
+        try:
+            n = np.loadtxt(chain_efficiency_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
+            logging.info("%s loaded", chain_efficiency_lookup)
+            
+        except IOError:
+            logging.critical("Unable to load %s", chain_efficiency_lookup)
+            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + chain_efficiency_lookup + " from " + file + ". Make sure the file exists and is not open."
+            #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            raise Exception("Unable to load \'" + chain_efficiency_lookup + "\'")
+        n = np.loadtxt(chain_efficiency_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
+        x = n[:,0].astype(np.float)
+        y = n[:,1].astype(np.float)
+        chain_efficiency_map = interp1d(x,y)
+
+        #distance to corner radius lookup
+        corner_radius_lookup = "Lookup Files\\" + corner_radius_lookup
+        try:
+            n = np.loadtxt(corner_radius_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
+            logging.info("%s loaded", corner_radius_lookup)
+            
+        except IOError:
+            logging.critical("Unable to load %s", corner_radius_lookup)
+            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + corner_radius_lookup + " from " + file + ". Make sure the file exists and is not open."
+            #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            raise Exception("Unable to load \'" + corner_radius_lookup + "\'")
+        n = np.loadtxt(corner_radius_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
+        x = n[:,0].astype(np.float)
+        y = n[:,1].astype(np.float)
+        cornerradius = interp1d(x,y)        
+        
         
         #calc values
         
@@ -201,6 +372,7 @@ def Simulation(dict_in):
         drag_area = frontal_area * air_resistance
         mass = rider_mass + bike_mass
         top_torque = top_motor_current * motor_torque_constant
+        sea_level_temp = (coolant_temp+273.15) + (temp_lapse_rate * (distancetoaltitude_lookup.y[0]/1000)) - 273.15 # Celsius
 
         #Arrays (output)
         time = np.zeros((steps+1,tests),dtype=float)
@@ -222,6 +394,7 @@ def Simulation(dict_in):
         incline = np.zeros((steps+1,tests),dtype=float)
         rolling = np.zeros((steps+1,tests),dtype=float)
         air_density = np.zeros((steps+1,tests),dtype=float)
+        ambient_temp = np.zeros((steps+1,tests),dtype=float)
 
         motor_rpm = np.zeros((steps+1,tests),dtype=float)
         motor_torque = np.zeros((steps+1,tests),dtype=float)
@@ -266,165 +439,7 @@ def Simulation(dict_in):
         lean_angle_limit = np.zeros((steps+1,tests),dtype=float)
         lateral_acc = np.zeros((steps+1, tests), dtype=float)        
         
-        #Lookups
-        dist_to_speed_lookup = "Lookup Files\\" + dist_to_speed_lookup
-        try:
-            n = np.loadtxt(dist_to_speed_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
-            '''
-            logging.info("%s loaded", dist_to_speed_lookup)
-            msg = datetime.now().strftime('%H:%M:%S') + ": " + dist_to_speed_lookup + " loaded"
-            pub.sendMessage(("AddStatus"), msg)             
-            '''
-        except IOError:
-            logging.critical("Unable to load %s", dist_to_speed_lookup)
-            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + dist_to_speed_lookup + " from " + file+ ". Make sure the file exists and is not open."
-            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
-            raise Exception("Unable to load \'" + dist_to_speed_lookup + "\'")
-
-        x = n[:,0].astype(np.float)
-        y = n[:,1].astype(np.float)
-        #x = np.array([0,3220])
-	   #y = np.array([1000,1000])
-        distancetospeed_lookup = interp1d(x,y)
-          
-
-            
-        #Lookups
-        soc_to_voltage_lookup = "Lookup Files\\" + soc_to_voltage_lookup
-        try:
-            n = np.loadtxt(soc_to_voltage_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
-            logging.info("%s loaded", soc_to_voltage_lookup)
-
-        except IOError:
-            logging.critical("Unable to load %s", soc_to_voltage_lookup)
-            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + soc_to_voltage_lookup + " from " + file + ". Make sure the file exists and is not open."
-            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
-            raise Exception("Unable to load \'" + soc_to_voltage_lookup + "\'")
-            
-        x = n[:,0].astype(np.float)
-        y = n[:,1].astype(np.float)
-
-        soctovoltage_lookup = interp1d(x,y)
-       
-
         
-        dist_to_alt_lookup = "Lookup Files\\" + dist_to_alt_lookup
-        try:
-            n = np.loadtxt(dist_to_alt_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
-            logging.info("%s loaded", dist_to_alt_lookup)
-            
-        except IOError:
-            logging.critical("Unable to load %s", dist_to_alt_lookup)
-            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + dist_to_alt_lookup + " from " + file + ". Make sure the file exists and is not open."
-            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
-            raise Exception("Unable to load \'" + dist_to_alt_lookup + "\'")
-        x = n[:,0].astype(np.float)
-        y = n[:,1].astype(np.float)
-
-        distancetoaltitude_lookup = interp1d(x,y)
-        
-        
-        throttlemap_lookup = "Lookup Files\\" + throttlemap_lookup
-        try:
-            n = np.loadtxt(throttlemap_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
-            logging.info("%s loaded", throttlemap_lookup)
-            
-        except IOError:
-            logging.critical("Unable to load %s", throttlemap_lookup)
-            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + throttlemap_lookup + " from " + file + ". Make sure the file exists and is not open."
-            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
-            raise Exception("Unable to load \'" + throttlemap_lookup + "\'")
-        x = n[:,0].astype(np.float)
-        y = n[:,1].astype(np.float)
-        throttlemap = interp1d(x,y)        
-        
-        #distance_to_lean_angle_lookup
-        lean_angle_lookup = "Lookup Files\\" + lean_angle_lookup
-        try:
-            n = np.loadtxt(lean_angle_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
-            logging.info("%s loaded", lean_angle_lookup)
-    
-        except IOError:
-            logging.critical("Unable to load %s", lean_angle_lookup)
-            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + lean_angle_lookup + " from " + file + ". Make sure the file exists and is not open."
-            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
-            raise Exception("Unable to load \'" + lean_angle_lookup + "\'")
-        x = n[:,0].astype(np.float)
-        y = n[:,1].astype(np.float)
-        lean_angle_lookup = interp1d(x,y)
-   
-        motor_controller_eff_lookup = "Lookup Files\\" + motor_controller_eff_lookup
-        try:
-            n = np.loadtxt(motor_controller_eff_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
-            logging.info("%s loaded", motor_controller_eff_lookup)
-            
-        except IOError:
-            logging.critical("Unable to load %s", motor_controller_eff_lookup)
-            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + motor_controller_eff_lookup + " from " + file + ". Make sure the file exists and is not open."
-            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
-            raise Exception("Unable to load \'" + motor_controller_eff_lookup + "\'")
-            
-        x = n[:,0].astype(np.float)
-        y = n[:,1].astype(np.float)
-        z = n[:,2].astype(np.float)
-        points = np.transpose(np.array([x,y]))
-        values = np.array(z)
-        grid_x, grid_y = np.mgrid[np.min(x):np.max(x)+1, np.min(y):np.max(y)+1]
-        motor_controller_eff_grid = griddata(points, values, (grid_x, grid_y), method='linear')
-
-        
-        motor_eff_lookup = "Lookup Files\\" + motor_eff_lookup
-        try:
-            n = np.loadtxt(motor_eff_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
-            logging.info("%s loaded", motor_eff_lookup)
-            
-        except IOError:
-            logging.critical("Unable to load %s", motor_eff_lookup)
-            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + motor_eff_lookup + " from " + file + ". Make sure the file exists and is not open."
-            wx.CallAfter(pub.sendMessage, "AddStatus", msg) 
-            raise Exception("Unable to load \'" + motor_eff_lookup + "\'")
-
-        x = n[:,0].astype(np.float)
-        y = n[:,1].astype(np.float)
-        z = n[:,2].astype(np.float)
-        points = np.transpose(np.array([x,y]))
-        values = np.array(z)
-        grid_x, grid_y = np.mgrid[np.min(x):np.max(x)+1, np.min(y):np.max(y)+1]
-        motor_eff_grid = griddata(points, values, (grid_x, grid_y), method='linear')
-
-
-        #chain efficiency
-        #rpm to chain efficiency %
-        chain_efficiency_lookup = "Lookup Files\\" + chain_efficiency_lookup
-        try:
-            n = np.loadtxt(chain_efficiency_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
-            logging.info("%s loaded", chain_efficiency_lookup)
-            
-        except IOError:
-            logging.critical("Unable to load %s", chain_efficiency_lookup)
-            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + chain_efficiency_lookup + " from " + file + ". Make sure the file exists and is not open."
-            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
-            raise Exception("Unable to load \'" + chain_efficiency_lookup + "\'")
-        n = np.loadtxt(chain_efficiency_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
-        x = n[:,0].astype(np.float)
-        y = n[:,1].astype(np.float)
-        chain_efficiency_map = interp1d(x,y)
-
-        #distance to corner radius lookup
-        corner_radius_lookup = "Lookup Files\\" + corner_radius_lookup
-        try:
-            n = np.loadtxt(corner_radius_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
-            logging.info("%s loaded", corner_radius_lookup)
-            
-        except IOError:
-            logging.critical("Unable to load %s", corner_radius_lookup)
-            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + corner_radius_lookup + " from " + file + ". Make sure the file exists and is not open."
-            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
-            raise Exception("Unable to load \'" + corner_radius_lookup + "\'")
-        n = np.loadtxt(corner_radius_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
-        x = n[:,0].astype(np.float)
-        y = n[:,1].astype(np.float)
-        cornerradius = interp1d(x,y)
 
         message = '';        
         
@@ -434,21 +449,21 @@ def Simulation(dict_in):
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: max_distance_travel greater than speed to distance look up --- '
             message += 'max_distance_travel changed to ' + repr(max_distance_travel) + " for file " + file
-            wx.CallAfter(pub.sendMessage, "AddStatus", message) 
+            #wx.CallAfter(pub.sendMessage, "AddStatus", message) 
 
         if np.max(distancetoaltitude_lookup.x) < max_distance_travel:
             max_distance_travel =  np.max(distancetoaltitude_lookup.x)  
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: max_distance_travel greater than altitude to distance look up --- '
             message += 'max_distance_travel changed to ' + repr(max_distance_travel) + " for file " + file
-            wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         if np.max(throttlemap.x) < top_rpm:
             top_rpm = np.max(throttlemap.x)
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: top rpm is greater than throttle map look up --- '
             message += 'top rpm changed to ' + repr(top_rpm) + " for file " + file
-            wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         (x,y) = motor_eff_grid.shape
         if y-1 <  top_torque:
@@ -458,14 +473,14 @@ def Simulation(dict_in):
             message += 'WARNING: top_torque greater than motor efficiency look up --- '
             message += 'top_torque changed to ' + repr(top_torque) + ', top_motor_current changed to ' + repr(top_motor_current)
             message += " for file " + file
-            wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         if x-1 <  top_rpm:
             top_rpm = x-1
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: top_rpm greater than motor efficiency look up --- '
             message += 'top_rpm changed to ' + repr(top_rpm) + " for file " + file
-            wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
 
         (x,y) = motor_controller_eff_grid.shape
         if y-1 <  top_torque/motor_torque_constant:
@@ -477,40 +492,40 @@ def Simulation(dict_in):
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: possible arms (from top_motor_current and motor torque constant) is greater than motor controller efficiency look up --- '
             message += 'top_motor_current changed to ' + repr(top_motor_current) + ' for file ' + file
-            wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
     
         if x-1 <  (top_rpm/(motor_rpm_constant)*(1/(sqrt2))) :
             top_rpm = (x-1)*(motor_rpm_constant)*(1/(sqrt2)) 
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: possible Vrms (from top_rpm and motor rpm constant) is greater than motor controller efficiency look up --- '
             message += 'top_rpm changed to ' + repr(top_rpm) + ' for file ' + file
-            wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         if np.max(lean_angle_lookup.x) < max_distance_travel:
             max_distance_travel =  np.max(lean_angle_lookup.x)  
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: max_distance_travel greater than lean angle to distance look up --- '
             message += 'max_distance_travel changed to ' + repr(max_distance_travel) + ' for file ' + file
-            wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         if np.max(chain_efficiency_map.x) < top_rpm:
             top_rpm = np.max(chain_efficiency_map.x)
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: top rpm is greater than the chain efficiency look up --- '
             message += 'top rpm changed to ' + repr(top_rpm) + ' for file ' + file
-            wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
         
         if np.max(cornerradius.x) < max_distance_travel:
             max_distance_travel = np.max(cornerradius.x)
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: max_distance_travel is greater than cornerradius to distance look up --- '
             message += 'max_distance_travel changed to ' + repr(max_distance_travel) + ' for file ' + file
-            wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
-        wx.CallAfter(pub.sendMessage, "update", "")   
+        #wx.CallAfter(pub.sendMessage, "update", "")   
         '''
         if len(message) > 1:
-            GUIdialog = wx.MessageDialog(None, message, "Warning", wx.OK)
+            GUIdialog = #wx.MessageDialog(None, message, "Warning", wx.OK)
             GUIdialog.ShowModal()
             GUIdialog.Destroy()     
         '''
@@ -534,7 +549,10 @@ def Simulation(dict_in):
         def Force(s,n):
             acceleration[n+1] = mass*((s - speed[n])/step)
             altitude[n+1] = distancetoaltitude_lookup(distance[n+1])
-            air_density[n+1] = (((altitude[n+1]/1000)-44.3308)/-42.2665) ** 4.25588
+            ambient_temp[n+1] = (sea_level_temp+273.15) - temp_lapse_rate * (altitude[n+1]/1000) - 273.15
+            # May want to modify to specify a different sea level standard pressure
+            pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[n+1]/1000)/(sea_level_temp+273.15))) ** (gravity*28.9644/8.31432*temp_lapse_rate)
+            air_density[n+1] = (pressure * 28.9644) / (8.31432 * (ambient_temp[n+1]+273.15) * 1000)
             drag[n+1] = 0.5 * drag_area*air_density[n+1]*s**2
             slope[n+1] = (altitude[n+1] - altitude[n])/(distance[n+1] - distance[n])    
             incline[n+1] = mass*gravity*slope[n+1]
@@ -616,8 +634,14 @@ def Simulation(dict_in):
         #initial condidtions
         distance[0] = .1 #can't be 0 because not in look up
         speed[0] = .1 #can't be 0 or the bike will never start moving
-        altitude[0] = distancetoaltitude_lookup(1)
-        air_density[0] = (((altitude[0]/1000)-44.3308)/-42.2665) ** 4.25588
+        altitude[0] = distancetoaltitude_lookup.y[0]
+        print altitude[0]
+        ambient_temp[0] = coolant_temp
+        print ambient_temp[0]
+        pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[0]/1000)/(sea_level_temp+273.15))) ** (gravity*28.9644/8.31432*temp_lapse_rate)
+        print pressure
+        air_density[0] = (pressure * 28.9644) / (8.31432 * (ambient_temp[0]+273.15) * 1000)        
+        print air_density[0]
         voltage[0] = soctovoltage_lookup(0) * series_cells
         
 
@@ -725,6 +749,7 @@ def Simulation(dict_in):
         newData["Incline (N)"] = (incline[:end])
         newData["Rolling (N)"] = (rolling[:end])
         newData["Air Density(kg/m^3)"] = (air_density[:end])
+        newData["Ambient Temperature (C)"] = (ambient_temp[:end])
         newData["Motor RPM"] = (motor_rpm[:end])
         newData["Motor Torque (Nm)"] = (motor_torque[:end])      
         newData["Motor Loss (Watts)"] = (motor_loss[:end])
@@ -780,7 +805,7 @@ def Simulation(dict_in):
 
         dict_in[file] = newData
         logging.info("Converted %s to a dictionary successfully", file)
-        wx.CallAfter(pub.sendMessage, "update", "")
+        #wx.CallAfter(pub.sendMessage, "update", "")
 
         
     logging.info("ENDING Simulation.py")

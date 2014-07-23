@@ -60,6 +60,7 @@ top_lean_angle = 38
 
 top_motor_current = 240.0 #Amps
 temp_lapse_rate = 6.5
+sea_level_pressure = 101325
 
 
 #lookup files
@@ -296,10 +297,10 @@ def force_solve(s,n):
 #Find Force at point n+1
 def Force(s,n):
     acceleration[n+1] = mass*((s - speed[n])/step)
-    ambient_temp[n+1] = (sea_level_temp+273.15) - 6.5 * (altitude[n+1]/1000)
+    ambient_temp[n+1] = (sea_level_temp+273.15) - temp_lapse_rate * (altitude[n+1]/1000) - 273.15
     # May want to modify to specify a different sea level standard pressure
-    pressure = 101325 * (1 - (6.5*(altitude[n+1]/1000)/(sea_level_temp+273.15))) ** (gravity*28.9644/8.31432*6.5)
-    air_density[n+1] = (pressure * 28.9644) / (8.31432 * ambient_temp[n+1] * 1000)
+    pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[n+1]/1000)/(sea_level_temp+273.15))) ** (gravity*28.9644/8.31432*temp_lapse_rate)
+    air_density[n+1] = (pressure * 28.9644) / (8.31432 * (ambient_temp[n+1]+273.15) * 1000)
     drag[n+1] = 0.5 * drag_area*air_density[n+1]*s**2
     slope[n+1] = (altitude[n+1] - altitude[n])/(distance[n+1] - distance[n])    
     incline[n+1] = mass*gravity*slope[n+1]
@@ -386,8 +387,11 @@ speed[0] = .1 #can't be 0 or the bike will never start moving
 altitude[0] = distancetoaltitude_lookup(1)
 
 ambient_temp[0] = coolant_temp
-pressure = 101325 * (1 - (6.5*(altitude[0]/1000)/(sea_level_temp+273.15))) ** (gravity*28.9644/8.31432*6.5)
-air_density[0] = (pressure * 28.9644) / (8.31432 * ambient_temp[0] * 1000)
+print ambient_temp[0]
+pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[0]/1000)/(sea_level_temp+273.15))) ** (gravity*28.9644/8.31432*temp_lapse_rate)
+print pressure
+air_density[0] = (pressure * 28.9644) / (8.31432 * (ambient_temp[0]+273.15) * 1000)
+print air_density[0]
 
 voltage[0] = soctovoltage_lookup(0) * series_cells
 
