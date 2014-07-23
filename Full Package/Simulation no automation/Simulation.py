@@ -31,7 +31,7 @@ frontal_area =  1 #m^2
 rolling_resistance = 0.02973
 
 #top_torque = 240.0 #nm no longer used calculatede below
-top_rpm = 1800
+top_rpm = 180
 
 motor_top_power = 10000000.0
 max_distance_travel = 20000.0 #meters this needs to be calculated from lookups
@@ -62,7 +62,7 @@ TyreC = 9.54
 
 top_lean_angle = 90
 
-top_motor_current = 3250 #Amps
+top_motor_current = 3250.0 #Amps
 temp_lapse_rate = 6.5
 sea_level_pressure = 101325
 
