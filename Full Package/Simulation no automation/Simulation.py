@@ -62,7 +62,7 @@ TyreC = 9.54
 
 top_lean_angle = 90
 
-top_motor_current = 3250.0 #Amps
+top_motor_current = 1 #Amps
 temp_lapse_rate = 6.5
 sea_level_pressure = 101325
 
@@ -371,8 +371,7 @@ def Motor_Thermal(n):
 def Motor_Thermal_solve(s,n):
     f = Force(s,n)     
     p = Power(s,n)
-    if Efficiency(s,f,p,n) == float('nan'):
-        return max_motor_temp
+    Efficiency(s,f,p,n)
     Motor_Thermal(n)
     motor_thermal_error[n+1] = abs(motor_temp[n+1] - max_motor_temp)
     return motor_thermal_error[n+1]
@@ -387,14 +386,9 @@ def Wheel_Radius(lean,n):
 distance[0] = .1 #can't be 0 because not in look up
 speed[0] = .1 #can't be 0 or the bike will never start moving
 altitude[0] = distancetoaltitude_lookup(1)
-
 ambient_temp[0] = coolant_temp
-print ambient_temp[0]
 pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[0]/1000)/(sea_level_temp+273.15))) ** (gravity*28.9644/8.31432*temp_lapse_rate)
-print pressure
 air_density[0] = (pressure * 28.9644) / (8.31432 * (ambient_temp[0]+273.15) * 1000)
-print air_density[0]
-
 voltage[0] = soctovoltage_lookup(0) * series_cells
 
 
