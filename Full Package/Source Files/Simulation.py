@@ -222,6 +222,7 @@ def Simulation(dict_in):
 	   #y = np.array([1000,1000])
         distancetospeed_lookup = interp1d(x,y)
           
+        
 
             
         #Lookups
@@ -548,9 +549,10 @@ def Simulation(dict_in):
         #Find Force at point n+1
         def Force(s,n):
             acceleration[n+1] = mass*((s - speed[n])/step)
-            ambient_temp[n+1] = (sea_level_temp+273.15) - temp_lapse_rate * (altitude[n+1]/1000) - 273.15
+            altitude[n+1] = distancetoaltitude_lookup(distance[n+1])
+            ambient_temp[n+1] = ((sea_level_temp+273.15) - temp_lapse_rate * (altitude[n+1]/1000)) - 273.15
             # May want to modify to specify a different sea level standard pressure
-            pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[n+1]/1000)/(sea_level_temp+273.15))) ** (gravity*28.9644/8.31432*temp_lapse_rate)
+            pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[n+1]/1000)/(sea_level_temp+273.15))) ** ((gravity*28.9644)/(8.31432*temp_lapse_rate))
             air_density[n+1] = (pressure * 28.9644) / (8.31432 * (ambient_temp[n+1]+273.15) * 1000)
             drag[n+1] = 0.5 * drag_area*air_density[n+1]*s**2
             slope[n+1] = (altitude[n+1] - altitude[n])/(distance[n+1] - distance[n])    
@@ -564,7 +566,7 @@ def Simulation(dict_in):
             motor_torque[n+1] = (f * wheel_radius[n+1])/gearing
             arms[n+1] = motor_torque[n+1]/motor_torque_constant
             vrms[n+1] = motor_rpm[n+1]/(motor_rpm_constant)*(1/(sqrt2))  
-            
+       
             motor_efficiency[n+1] = motor_eff_grid[np.int(np.around(motor_rpm[n+1]))][np.int(np.around(motor_torque[n+1]))]
             motor_controller_efficiency[n+1] = motor_controller_eff_grid[np.int(np.around(vrms[n+1]))][np.int(np.around(arms[n+1]))]
             
@@ -635,7 +637,7 @@ def Simulation(dict_in):
         speed[0] = .1 #can't be 0 or the bike will never start moving
         altitude[0] = distancetoaltitude_lookup(1)
         ambient_temp[0] = coolant_temp
-        pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[0]/1000)/(sea_level_temp+273.15))) ** (gravity*28.9644/8.31432*temp_lapse_rate)
+        pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[0]/1000)/(sea_level_temp+273.15))) ** ((gravity*28.9644)/(8.31432*temp_lapse_rate))
         air_density[0] = (pressure * 28.9644) / (8.31432 * (ambient_temp[0]+273.15) * 1000)        
         voltage[0] = soctovoltage_lookup(0) * series_cells
         
