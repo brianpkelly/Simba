@@ -31,7 +31,7 @@ frontal_area =  1 #m^2
 rolling_resistance = 0.02973
 
 #top_torque = 240.0 #nm no longer used calculatede below
-top_rpm = 180
+top_rpm = 1800
 
 motor_top_power = 10000000.0
 max_distance_travel = 20000.0 #meters this needs to be calculated from lookups
@@ -62,7 +62,7 @@ TyreC = 9.54
 
 top_lean_angle = 90
 
-top_motor_current = 1 #Amps
+top_motor_current = 3250 #Amps
 temp_lapse_rate = 6.5
 sea_level_pressure = 101325
 
@@ -91,6 +91,8 @@ n = np.loadtxt(dist_to_speed_lookup,dtype = 'string',delimiter = ',', skiprows =
 x = n[:,0].astype(np.float)
 y = n[:,1].astype(np.float)
 distancetospeed_lookup = interp1d(x,y)
+
+print distancetospeed_lookup(19297.74031)
 
 #distance to altitude 
 n = np.loadtxt(dist_to_alt_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
@@ -305,6 +307,7 @@ def Force(s,n):
     # May want to modify to specify a different sea level standard pressure
     pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[n+1]/1000)/(sea_level_temp+273.15))) ** (gravity*28.9644/8.31432*temp_lapse_rate)
     air_density[n+1] = (pressure * 28.9644) / (8.31432 * (ambient_temp[n+1]+273.15) * 1000)
+    print air_density[n+1]
     drag[n+1] = 0.5 * drag_area*air_density[n+1]*s**2
     slope[n+1] = (altitude[n+1] - altitude[n])/(distance[n+1] - distance[n])    
     incline[n+1] = mass*gravity*slope[n+1]
@@ -386,9 +389,11 @@ def Wheel_Radius(lean,n):
 distance[0] = .1 #can't be 0 because not in look up
 speed[0] = .1 #can't be 0 or the bike will never start moving
 altitude[0] = distancetoaltitude_lookup(1)
+
 ambient_temp[0] = coolant_temp
 pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[0]/1000)/(sea_level_temp+273.15))) ** (gravity*28.9644/8.31432*temp_lapse_rate)
 air_density[0] = (pressure * 28.9644) / (8.31432 * (ambient_temp[0]+273.15) * 1000)
+print air_density[0]
 voltage[0] = soctovoltage_lookup(0) * series_cells
 
 
