@@ -33,10 +33,10 @@ def Simulation(dict_in):
             if np.size(currentData[key]) > 1:
                 logging.critical("Parameter %s in %s has more than 1 value",key,file)
                 msg = datetime.now().strftime('%H:%M:%S') + ": " + "Parameter " + key + " in " + file + " has more than 1 value! Each parameter may only have 1 value"
-                #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+                wx.CallAfter(pub.sendMessage, "AddStatus", msg)
                 raise Exception("One or more params in " + file + " have two or more values. Each param can only have one value")
         
-        #wx.CallAfter(pub.sendMessage, "update", "")
+        wx.CallAfter(pub.sendMessage, "update", "")
         tests = 1
         #parameters
         logging.info("Checking to make sure file %s has needed parameters...", file)
@@ -213,7 +213,7 @@ def Simulation(dict_in):
         except IOError:
             logging.critical("Unable to load %s", dist_to_speed_lookup)
             msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + dist_to_speed_lookup + " from " + file+ ". Make sure the file exists and is not open."
-            #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
             raise Exception("Unable to load \'" + dist_to_speed_lookup + "\'")
 
         x = n[:,0].astype(np.float)
@@ -222,6 +222,7 @@ def Simulation(dict_in):
 	   #y = np.array([1000,1000])
         distancetospeed_lookup = interp1d(x,y)
           
+        
 
             
         #Lookups
@@ -233,7 +234,7 @@ def Simulation(dict_in):
         except IOError:
             logging.critical("Unable to load %s", soc_to_voltage_lookup)
             msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + soc_to_voltage_lookup + " from " + file + ". Make sure the file exists and is not open."
-            #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
             raise Exception("Unable to load \'" + soc_to_voltage_lookup + "\'")
             
         x = n[:,0].astype(np.float)
@@ -251,7 +252,7 @@ def Simulation(dict_in):
         except IOError:
             logging.critical("Unable to load %s", dist_to_alt_lookup)
             msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + dist_to_alt_lookup + " from " + file + ". Make sure the file exists and is not open."
-            #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
             raise Exception("Unable to load \'" + dist_to_alt_lookup + "\'")
         x = n[:,0].astype(np.float)
         y = n[:,1].astype(np.float)
@@ -267,7 +268,7 @@ def Simulation(dict_in):
         except IOError:
             logging.critical("Unable to load %s", throttlemap_lookup)
             msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + throttlemap_lookup + " from " + file + ". Make sure the file exists and is not open."
-            #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
             raise Exception("Unable to load \'" + throttlemap_lookup + "\'")
         x = n[:,0].astype(np.float)
         y = n[:,1].astype(np.float)
@@ -282,7 +283,7 @@ def Simulation(dict_in):
         except IOError:
             logging.critical("Unable to load %s", lean_angle_lookup)
             msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + lean_angle_lookup + " from " + file + ". Make sure the file exists and is not open."
-            #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
             raise Exception("Unable to load \'" + lean_angle_lookup + "\'")
         x = n[:,0].astype(np.float)
         y = n[:,1].astype(np.float)
@@ -296,7 +297,7 @@ def Simulation(dict_in):
         except IOError:
             logging.critical("Unable to load %s", motor_controller_eff_lookup)
             msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + motor_controller_eff_lookup + " from " + file + ". Make sure the file exists and is not open."
-            #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
             raise Exception("Unable to load \'" + motor_controller_eff_lookup + "\'")
             
         x = n[:,0].astype(np.float)
@@ -316,7 +317,7 @@ def Simulation(dict_in):
         except IOError:
             logging.critical("Unable to load %s", motor_eff_lookup)
             msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + motor_eff_lookup + " from " + file + ". Make sure the file exists and is not open."
-            #wx.CallAfter(pub.sendMessage, "AddStatus", msg) 
+            wx.CallAfter(pub.sendMessage, "AddStatus", msg) 
             raise Exception("Unable to load \'" + motor_eff_lookup + "\'")
 
         x = n[:,0].astype(np.float)
@@ -338,7 +339,7 @@ def Simulation(dict_in):
         except IOError:
             logging.critical("Unable to load %s", chain_efficiency_lookup)
             msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + chain_efficiency_lookup + " from " + file + ". Make sure the file exists and is not open."
-            #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
             raise Exception("Unable to load \'" + chain_efficiency_lookup + "\'")
         n = np.loadtxt(chain_efficiency_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
         x = n[:,0].astype(np.float)
@@ -354,7 +355,7 @@ def Simulation(dict_in):
         except IOError:
             logging.critical("Unable to load %s", corner_radius_lookup)
             msg = datetime.now().strftime('%H:%M:%S') + ": " + "Unable to load " + corner_radius_lookup + " from " + file + ". Make sure the file exists and is not open."
-            #wx.CallAfter(pub.sendMessage, "AddStatus", msg)
+            wx.CallAfter(pub.sendMessage, "AddStatus", msg)
             raise Exception("Unable to load \'" + corner_radius_lookup + "\'")
         n = np.loadtxt(corner_radius_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
         x = n[:,0].astype(np.float)
@@ -449,21 +450,21 @@ def Simulation(dict_in):
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: max_distance_travel greater than speed to distance look up --- '
             message += 'max_distance_travel changed to ' + repr(max_distance_travel) + " for file " + file
-            #wx.CallAfter(pub.sendMessage, "AddStatus", message) 
+            wx.CallAfter(pub.sendMessage, "AddStatus", message) 
 
         if np.max(distancetoaltitude_lookup.x) < max_distance_travel:
             max_distance_travel =  np.max(distancetoaltitude_lookup.x)  
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: max_distance_travel greater than altitude to distance look up --- '
             message += 'max_distance_travel changed to ' + repr(max_distance_travel) + " for file " + file
-            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         if np.max(throttlemap.x) < top_rpm:
             top_rpm = np.max(throttlemap.x)
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: top rpm is greater than throttle map look up --- '
             message += 'top rpm changed to ' + repr(top_rpm) + " for file " + file
-            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         (x,y) = motor_eff_grid.shape
         if y-1 <  top_torque:
@@ -473,14 +474,14 @@ def Simulation(dict_in):
             message += 'WARNING: top_torque greater than motor efficiency look up --- '
             message += 'top_torque changed to ' + repr(top_torque) + ', top_motor_current changed to ' + repr(top_motor_current)
             message += " for file " + file
-            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         if x-1 <  top_rpm:
             top_rpm = x-1
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: top_rpm greater than motor efficiency look up --- '
             message += 'top_rpm changed to ' + repr(top_rpm) + " for file " + file
-            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            wx.CallAfter(pub.sendMessage, "AddStatus", message)
 
         (x,y) = motor_controller_eff_grid.shape
         if y-1 <  top_torque/motor_torque_constant:
@@ -492,40 +493,40 @@ def Simulation(dict_in):
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: possible arms (from top_motor_current and motor torque constant) is greater than motor controller efficiency look up --- '
             message += 'top_motor_current changed to ' + repr(top_motor_current) + ' for file ' + file
-            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            wx.CallAfter(pub.sendMessage, "AddStatus", message)
     
         if x-1 <  (top_rpm/(motor_rpm_constant)*(1/(sqrt2))) :
             top_rpm = (x-1)*(motor_rpm_constant)*(1/(sqrt2)) 
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: possible Vrms (from top_rpm and motor rpm constant) is greater than motor controller efficiency look up --- '
             message += 'top_rpm changed to ' + repr(top_rpm) + ' for file ' + file
-            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         if np.max(lean_angle_lookup.x) < max_distance_travel:
             max_distance_travel =  np.max(lean_angle_lookup.x)  
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: max_distance_travel greater than lean angle to distance look up --- '
             message += 'max_distance_travel changed to ' + repr(max_distance_travel) + ' for file ' + file
-            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         if np.max(chain_efficiency_map.x) < top_rpm:
             top_rpm = np.max(chain_efficiency_map.x)
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: top rpm is greater than the chain efficiency look up --- '
             message += 'top rpm changed to ' + repr(top_rpm) + ' for file ' + file
-            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            wx.CallAfter(pub.sendMessage, "AddStatus", message)
         
         if np.max(cornerradius.x) < max_distance_travel:
             max_distance_travel = np.max(cornerradius.x)
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: max_distance_travel is greater than cornerradius to distance look up --- '
             message += 'max_distance_travel changed to ' + repr(max_distance_travel) + ' for file ' + file
-            #wx.CallAfter(pub.sendMessage, "AddStatus", message)
+            wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
-        #wx.CallAfter(pub.sendMessage, "update", "")   
+        wx.CallAfter(pub.sendMessage, "update", "")   
         '''
         if len(message) > 1:
-            GUIdialog = #wx.MessageDialog(None, message, "Warning", wx.OK)
+            GUIdialog = wx.MessageDialog(None, message, "Warning", wx...OK)
             GUIdialog.ShowModal()
             GUIdialog.Destroy()     
         '''
@@ -549,9 +550,9 @@ def Simulation(dict_in):
         def Force(s,n):
             acceleration[n+1] = mass*((s - speed[n])/step)
             altitude[n+1] = distancetoaltitude_lookup(distance[n+1])
-            ambient_temp[n+1] = (sea_level_temp+273.15) - temp_lapse_rate * (altitude[n+1]/1000) - 273.15
+            ambient_temp[n+1] = ((sea_level_temp+273.15) - temp_lapse_rate * (altitude[n+1]/1000)) - 273.15
             # May want to modify to specify a different sea level standard pressure
-            pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[n+1]/1000)/(sea_level_temp+273.15))) ** (gravity*28.9644/8.31432*temp_lapse_rate)
+            pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[n+1]/1000)/(sea_level_temp+273.15))) ** ((gravity*28.9644)/(8.31432*temp_lapse_rate))
             air_density[n+1] = (pressure * 28.9644) / (8.31432 * (ambient_temp[n+1]+273.15) * 1000)
             drag[n+1] = 0.5 * drag_area*air_density[n+1]*s**2
             slope[n+1] = (altitude[n+1] - altitude[n])/(distance[n+1] - distance[n])    
@@ -565,7 +566,7 @@ def Simulation(dict_in):
             motor_torque[n+1] = (f * wheel_radius[n+1])/gearing
             arms[n+1] = motor_torque[n+1]/motor_torque_constant
             vrms[n+1] = motor_rpm[n+1]/(motor_rpm_constant)*(1/(sqrt2))  
-            
+       
             motor_efficiency[n+1] = motor_eff_grid[np.int(np.around(motor_rpm[n+1]))][np.int(np.around(motor_torque[n+1]))]
             motor_controller_efficiency[n+1] = motor_controller_eff_grid[np.int(np.around(vrms[n+1]))][np.int(np.around(arms[n+1]))]
             
@@ -590,7 +591,7 @@ def Simulation(dict_in):
                 
         #Top Speed(allows for expandsion to one top speeds)
         def Top_speed(n):
-            return ((wheel_radius[n+1]*2*np.pi* (top_rpm) / (gearing))/60)
+            return max([0,((wheel_radius[n+1]*2*np.pi* (top_rpm) / (gearing))/60)])
                     
         #Top Power 
         #check which has lower top power battery or motor
@@ -634,14 +635,10 @@ def Simulation(dict_in):
         #initial condidtions
         distance[0] = .1 #can't be 0 because not in look up
         speed[0] = .1 #can't be 0 or the bike will never start moving
-        altitude[0] = distancetoaltitude_lookup.y[0]
-        print altitude[0]
+        altitude[0] = distancetoaltitude_lookup(1)
         ambient_temp[0] = coolant_temp
-        print ambient_temp[0]
-        pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[0]/1000)/(sea_level_temp+273.15))) ** (gravity*28.9644/8.31432*temp_lapse_rate)
-        print pressure
+        pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[0]/1000)/(sea_level_temp+273.15))) ** ((gravity*28.9644)/(8.31432*temp_lapse_rate))
         air_density[0] = (pressure * 28.9644) / (8.31432 * (ambient_temp[0]+273.15) * 1000)        
-        print air_density[0]
         voltage[0] = soctovoltage_lookup(0) * series_cells
         
 
@@ -672,7 +669,7 @@ def Simulation(dict_in):
                 
                 if c_force[n+1] > top_force[n+1]:           #Limit speed to top force
                     motor_torque_limit[n+1] = 1
-                    p_speed[n+1] = (opt.fsolve(force_solve,t_speed[n+1],n))[0]
+                    p_speed[n+1] = max([0,(opt.fsolve(force_solve,t_speed[n+1],n))[0]])
                     p_force[n+1] = Force(p_speed[n+1],n)
                 else:
                     p_speed[n+1] = t_speed[n+1]
@@ -685,7 +682,7 @@ def Simulation(dict_in):
                         motor_power_limit[n+1] = 1
                     if is_batt_power:
                         batt_power_limit[n+1] = 1
-                    mt_speed[n+1] = (opt.fsolve(power_solve,p_speed[n+1],n))[0]
+                    mt_speed[n+1] = max([0,(opt.fsolve(power_solve,p_speed[n+1],n))[0]])
                     mt_force[n+1] = Force(mt_speed[n+1],n)
                     mt_power[n+1] = Power(mt_speed[n+1],n)
                 else:
@@ -805,7 +802,7 @@ def Simulation(dict_in):
 
         dict_in[file] = newData
         logging.info("Converted %s to a dictionary successfully", file)
-        #wx.CallAfter(pub.sendMessage, "update", "")
+        wx.CallAfter(pub.sendMessage, "update", "")
 
         
     logging.info("ENDING Simulation.py")

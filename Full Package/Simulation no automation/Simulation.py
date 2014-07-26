@@ -17,60 +17,64 @@ step = .5       #time step in seconds
 total_time = 3600.0
 
 #wheel_radius = 0.323596 #meters
-gearing = 44/21.0
+gearing = 1.0
 
-rider_mass = 97 
-bike_mass = 267.6195 #kg
+rider_mass = 90.0 
+bike_mass = 215.0 #kg
 
 gravity = 9.81
 
-air_resistance = .45
+air_resistance = .38
 #air_density = 1.204 #now calculated based on altitude
 frontal_area =  1 #m^2
 
 rolling_resistance = 0.02973
 
 #top_torque = 240.0 #nm no longer used calculatede below
-top_rpm = 3000
+top_rpm = 1800
 
-motor_top_power = 80000.0
-max_distance_travel = 60350.0 #meters this needs to be calculated from lookups
+motor_top_power = 10000000.0
+max_distance_travel = 20000.0 #meters this needs to be calculated from lookups
 
 #chain_efficiency = .98 #no longer used with new lookup table
-battery_efficiency = .98
+battery_efficiency = 1.0
 
-motor_torque_constant = 2   #torque to current constant of motor. torque/amp
-motor_rpm_constant = 12.0   #rpm to voltage dc constant of motor. rpm/volt
+motor_torque_constant = 1.0   #torque to current constant of motor. torque/amp
+motor_rpm_constant = 1.0   #rpm to voltage dc constant of motor. rpm/volt
 
-series_cells = 110.0
-max_amphour = 40.0
-batt_max_current = 280
+series_cells = 1000000.0
 
-motor_thermal_conductivity = 20
-motor_heat_capacity = 4000.0
-coolant_temp = 13.0
-max_motor_temp = 115.0
+max_amphour = 1000000.0
+
+batt_max_current = 10000000.0
+
+
+motor_thermal_conductivity = 10000000
+motor_heat_capacity = float('inf')
+coolant_temp = 10
+max_motor_temp = 10000000
+
 
 #wheel_radius = tyreA*lean_angle**2 + tyreB*lean_angle + TyreC
-tyreA = -2.069641313760728140e-05
-tyreB = 6.386679031823000125e-06
-TyreC = 3.15e-01
+tyreA = 0
+tyreB = 0
+TyreC = 9.54
 
-top_lean_angle = 38
+top_lean_angle = 90
 
-top_motor_current = 240.0 #Amps
+top_motor_current = 3250 #Amps
 temp_lapse_rate = 6.5
 sea_level_pressure = 101325
 
 
 #lookup files
-dist_to_speed_lookup = 'disttospeed.csv'
-dist_to_alt_lookup = 'disttoalt.csv'
-motor_controller_eff_lookup = 'Tritium_ws200_eff.csv'
-motor_eff_lookup = 'Emrax_eff.csv'
-soc_to_voltage_lookup = 'aee.csv'
-throttlemap_lookup = 'throttle.csv'
-lean_angle_lookup = 'lean_IOM_video_data.csv'
+dist_to_speed_lookup = 'pikes_peak_zackrace_disttospeed.csv'
+dist_to_alt_lookup = 'disttoalt_pp.csv'
+motor_controller_eff_lookup = 'simple_cont_eff.csv'
+motor_eff_lookup = 'simple_motor_eff.csv'
+soc_to_voltage_lookup = 'simple_bat.csv'
+throttlemap_lookup = 'simple_throttle.csv'
+lean_angle_lookup = 'no_lean.csv'
 corner_radius_lookup = 'pikespeakradius.csv'
 chain_eff_lookup = 'chain_eff_30kW.csv'
 
@@ -87,6 +91,8 @@ n = np.loadtxt(dist_to_speed_lookup,dtype = 'string',delimiter = ',', skiprows =
 x = n[:,0].astype(np.float)
 y = n[:,1].astype(np.float)
 distancetospeed_lookup = interp1d(x,y)
+
+print distancetospeed_lookup(19297.74031)
 
 #distance to altitude 
 n = np.loadtxt(dist_to_alt_lookup,dtype = 'string',delimiter = ',', skiprows = 1)
@@ -297,10 +303,12 @@ def force_solve(s,n):
 #Find Force at point n+1
 def Force(s,n):
     acceleration[n+1] = mass*((s - speed[n])/step)
+    altitude[n+1] = distancetoaltitude_lookup(distance[n+1])
     ambient_temp[n+1] = (sea_level_temp+273.15) - temp_lapse_rate * (altitude[n+1]/1000) - 273.15
     # May want to modify to specify a different sea level standard pressure
-    pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[n+1]/1000)/(sea_level_temp+273.15))) ** (gravity*28.9644/8.31432*temp_lapse_rate)
+    pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[n+1]/1000)/(sea_level_temp+273.15))) ** ((gravity*28.9644)/(8.31432*temp_lapse_rate))
     air_density[n+1] = (pressure * 28.9644) / (8.31432 * (ambient_temp[n+1]+273.15) * 1000)
+    print air_density[n+1]
     drag[n+1] = 0.5 * drag_area*air_density[n+1]*s**2
     slope[n+1] = (altitude[n+1] - altitude[n])/(distance[n+1] - distance[n])    
     incline[n+1] = mass*gravity*slope[n+1]
@@ -311,8 +319,6 @@ def Force(s,n):
 def Efficiency(s,f,p,n):
     motor_rpm[n+1] = ((s)/(wheel_radius[n+1]*2*np.pi)) * gearing * 60
     motor_torque[n+1] = (f * wheel_radius[n+1])/gearing
-    if motor_torque[n+1] > top_force[n+1]:
-        return float('nan')
     arms[n+1] = motor_torque[n+1]/motor_torque_constant
     vrms[n+1] = motor_rpm[n+1]/(motor_rpm_constant)*(1/(sqrt2))  
 
@@ -369,8 +375,7 @@ def Motor_Thermal(n):
 def Motor_Thermal_solve(s,n):
     f = Force(s,n)     
     p = Power(s,n)
-    if Efficiency(s,f,p,n) == float('nan'):
-        return max_motor_temp
+    Efficiency(s,f,p,n)
     Motor_Thermal(n)
     motor_thermal_error[n+1] = abs(motor_temp[n+1] - max_motor_temp)
     return motor_thermal_error[n+1]
@@ -385,14 +390,10 @@ def Wheel_Radius(lean,n):
 distance[0] = .1 #can't be 0 because not in look up
 speed[0] = .1 #can't be 0 or the bike will never start moving
 altitude[0] = distancetoaltitude_lookup(1)
-
 ambient_temp[0] = coolant_temp
-print ambient_temp[0]
-pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[0]/1000)/(sea_level_temp+273.15))) ** (gravity*28.9644/8.31432*temp_lapse_rate)
-print pressure
+pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[0]/1000)/(sea_level_temp+273.15))) ** ((gravity*28.9644)/(8.31432*temp_lapse_rate))
 air_density[0] = (pressure * 28.9644) / (8.31432 * (ambient_temp[0]+273.15) * 1000)
 print air_density[0]
-
 voltage[0] = soctovoltage_lookup(0) * series_cells
 
 
@@ -400,7 +401,7 @@ def loop(n):
     for n in range(steps):
         time[n+1] = time[n] + step                  #increase time step
         distance[n+1] = distance[n] + speed[n]*step #move bike forward 
-        if (distance[n+1] > max_distance_travel) or speed[n] == 0:            
+        if (distance[n+1] > max_distance_travel):            
             return n                                #stop if cross finish line
         
         wheel_radius[n+1] = Wheel_Radius(lean_angle_lookup(distance[n+1]), n)
@@ -461,7 +462,6 @@ def loop(n):
             force[n+1] = mt_force[n+1]
             power[n+1] = mt_power[n+1]   
             total_power[n+1] = mt_total_power[n+1]
-        
                                                     #Find amphours and energy
         amphour[n+1] = amphour[n] + (total_power[n+1]/voltage[n+1])*(step/(60.0*60.0))
         energy[n+1] = energy[n] + total_power[n+1]*(step/(60.0*60.0))
