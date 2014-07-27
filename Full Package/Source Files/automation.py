@@ -2450,7 +2450,7 @@ class InputPanel(scrolled.ScrolledPanel):
     def UpdateP21 (self, e):
         try:
             previousValue = self.dictionary[self.fileToFile[self.dropDownList.GetValue()]]['motor_heat_capacity'][0]
-            self.dictionary[self.fileToFile[self.dropDownList.GetValue()]]['motor_heat_capacity'] = [self.p21GetValue()]
+            self.dictionary[self.fileToFile[self.dropDownList.GetValue()]]['motor_heat_capacity'] = [self.p21.GetValue()]
             pub.sendMessage(("DictFromInput"), self.dictionary)
             msg = datetime.now().strftime('%H:%M:%S') + ": " + "Motor Heat Capacity changed from " + str(previousValue) + " to " + self.p21.GetValue()
             pub.sendMessage(("AddStatus"), msg)
