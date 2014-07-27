@@ -554,6 +554,10 @@ def Simulation(dict_in):
             # May want to modify to specify a different sea level standard pressure
             pressure = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[n+1]/1000)/(sea_level_temp+273.15))) ** ((gravity*28.9644)/(8.31432*temp_lapse_rate))
             air_density[n+1] = (pressure * 28.9644) / (8.31432 * (ambient_temp[n+1]+273.15) * 1000)
+            print 'Data set:'
+            print ambient_temp[n+1]
+            print pressure
+            print air_density[n+1]
             drag[n+1] = 0.5 * drag_area*air_density[n+1]*s**2
             slope[n+1] = (altitude[n+1] - altitude[n])/(distance[n+1] - distance[n])    
             incline[n+1] = mass*gravity*slope[n+1]
