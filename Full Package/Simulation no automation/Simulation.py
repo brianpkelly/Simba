@@ -303,9 +303,11 @@ def force_solve(s,n):
 def Force(s,n):
     acceleration[n+1] = mass*((s - speed[n])/step)
     altitude[n+1] = distancetoaltitude_lookup(distance[n+1])
-    ambient_temp[n+1] = ambient_temp[n] + ((temp_lapse_rate)*((altitude[n+1]/1000)-(altitude[n]/1000)))
-    pressure[n+1] = pressure[n] * (((ambient_temp[n+1]+273.15)/(ambient_temp[n]+273.15))**((-1*gravity)/(temp_lapse_rate*287)))
-    air_density[n+1] = air_density[n] * (((ambient_temp[n+1]+273.15)/(ambient_temp[n]+273.15))**(-1*((gravity/(temp_lapse_rate*287))+1)))
+    ambient_temp[n+1] = ambient_temp[n] + ((temp_lapse_rate)*((altitude[n+1])-(altitude[n])))
+    pressure[n+1] = pressure[n] * (((ambient_temp[n+1]+273.15)/(ambient_temp[n]+273.15))**((-1*gravity)/(temp_lapse_rate*287.05)))
+    air_density[n+1] = air_density[n] * (((ambient_temp[n+1]+273.15)/(ambient_temp[n]+273.15))**(-1*((gravity/(temp_lapse_rate*287.05))+1)))
+    print "Data Set"
+    print air_density[n+1]
     drag[n+1] = 0.5 * drag_area*air_density[n+1]*s**2
     slope[n+1] = (altitude[n+1] - altitude[n])/(distance[n+1] - distance[n])    
     incline[n+1] = mass*gravity*slope[n+1]
@@ -387,9 +389,12 @@ def Wheel_Radius(lean,n):
 distance[0] = .1 #can't be 0 because not in look up
 speed[0] = .1 #can't be 0 or the bike will never start moving
 altitude[0] = distancetoaltitude_lookup(1)
-ambient_temp[0] = coolant_temp
+ambient_temp[0] = ((sea_level_temp+273.15) - temp_lapse_rate * (altitude[0]/1000)) - 273.15
 pressure[0] = sea_level_pressure * (1 - (temp_lapse_rate*(altitude[0]/1000)/(sea_level_temp+273.15))) ** ((gravity*28.9644)/(8.31432*temp_lapse_rate))
 air_density[0] = (pressure[0] * 28.9644) / (8.31432 * (ambient_temp[0]+273.15) * 1000)
+
+temp_lapse_rate = -6.5/1000.0
+
 voltage[0] = soctovoltage_lookup(0) * series_cells
 
 
