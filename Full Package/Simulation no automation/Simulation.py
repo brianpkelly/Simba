@@ -306,8 +306,7 @@ def Force(s,n):
     ambient_temp[n+1] = ambient_temp[n] + ((temp_lapse_rate)*((altitude[n+1])-(altitude[n])))
     pressure[n+1] = pressure[n] * (((ambient_temp[n+1]+273.15)/(ambient_temp[n]+273.15))**((-1*gravity)/(temp_lapse_rate*287.05)))
     air_density[n+1] = air_density[n] * (((ambient_temp[n+1]+273.15)/(ambient_temp[n]+273.15))**(-1*((gravity/(temp_lapse_rate*287.05))+1)))
-    print "Data Set"
-    print air_density[n+1]
+
     drag[n+1] = 0.5 * drag_area*air_density[n+1]*s**2
     slope[n+1] = (altitude[n+1] - altitude[n])/(distance[n+1] - distance[n])    
     incline[n+1] = mass*gravity*slope[n+1]
