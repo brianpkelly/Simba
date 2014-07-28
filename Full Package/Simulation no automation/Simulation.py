@@ -63,7 +63,7 @@ TyreC = 9.54
 top_lean_angle = 90
 
 top_motor_current = 3250 #Amps
-temp_lapse_rate = -6.5
+temp_lapse_rate = 6.5
 sea_level_pressure = 101325
 
 
@@ -155,7 +155,7 @@ drag_area = frontal_area * air_resistance
 mass = rider_mass + bike_mass
 top_torque = top_motor_current * motor_torque_constant
 
-sea_level_temp = (coolant_temp+273.15) + (temp_lapse_rate * (distancetoaltitude_lookup.y[0]/1000)) - 273.15 # Celsius
+sea_level_temp = 15 # Celsius
 
 #Arrays (output)
 time = np.zeros((steps+1,tests),dtype=float)
@@ -306,12 +306,6 @@ def Force(s,n):
     ambient_temp[n+1] = ambient_temp[n] + ((temp_lapse_rate)*((altitude[n+1]/1000)-(altitude[n]/1000)))
     pressure[n+1] = pressure[n] * (((ambient_temp[n+1]+273.15)/(ambient_temp[n]+273.15))**((-1*gravity)/(temp_lapse_rate*287)))
     air_density[n+1] = air_density[n] * (((ambient_temp[n+1]+273.15)/(ambient_temp[n]+273.15))**(-1*((gravity/(temp_lapse_rate*287))+1)))
-    if altitude[n+1][0] <= 2963 and altitude[n+1][0] >= 2900:
-        print 'Data set:'
-        print ambient_temp[n+1]
-        print pressure[n+1]
-        print air_density[n+1]
-        #print altitude[n+1]
     drag[n+1] = 0.5 * drag_area*air_density[n+1]*s**2
     slope[n+1] = (altitude[n+1] - altitude[n])/(distance[n+1] - distance[n])    
     incline[n+1] = mass*gravity*slope[n+1]
