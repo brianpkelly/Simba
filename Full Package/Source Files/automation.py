@@ -1699,8 +1699,8 @@ class MainFrame(wx.Frame):
         
         #Remove parameter fiel from
         inFiles = np.loadtxt(open(self.project, "rb"), dtype = 'string', delimiter = ',')
-        if self.currentFile.keys()[0] in inFiles[1:,0]:        
-            files = inFiles[inFiles[:,0] != self.currentFile.keys()[0]]
+        if self.currentFile.keys()[0] in inFiles[1:,1]:        
+            files = inFiles[inFiles[:,1] != self.currentFile.keys()[0]]
             if np.shape(files)[0] > 1:
                 files[1,3] = self.folderControl.GetValue()
                 files[1,4] = "Simulation Report.csv"
@@ -1710,14 +1710,11 @@ class MainFrame(wx.Frame):
         newDict = collections.OrderedDict()
         keys = []
         for item in self.dictionary.keys():
-
-            if item == self.currentFile.keys()[0]:
-                pass
-            else:
+            if item in files[1:,1]:
                 newDict[item] = self.dictionary[item]
                 keys.append(self.currentFile)
-                
-        keys = np.delete(self.currentFiles, np.nonzero(self.currentFiles == self.currentFile.keys()[0]))
+    
+        keys = np.delete(self.currentFiles, np.nonzero(self.currentFiles != files[1:,0]))
         wx.CallAfter(pub.sendMessage, "RemoveFiles", keys)
         wx.CallAfter(pub.sendMessage, "InputFiles", keys)
         if len(keys) > 0:
@@ -2047,7 +2044,7 @@ class InputPanel(scrolled.ScrolledPanel):
             
             self.dropDownList.Clear()
             wx.CallAfter(pub.sendMessage, "DisableDelete", True)
-            
+                    
 
 
         
