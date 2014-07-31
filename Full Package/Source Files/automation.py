@@ -1434,7 +1434,6 @@ class MainFrame(wx.Frame):
     def FindCurrentParamFile(self, msg):
         self.currentFile = msg.data
         
-        
     def SetDictionary(self, msg):
         self.dictionary = msg.data
         wx.CallAfter(pub.sendMessage, "UpdateInput", self.dictionary)
@@ -1699,8 +1698,8 @@ class MainFrame(wx.Frame):
         
         #Remove parameter fiel from
         inFiles = np.loadtxt(open(self.project, "rb"), dtype = 'string', delimiter = ',')
-        if self.currentFile.keys()[0] in inFiles[1:,0]:        
-            files = inFiles[inFiles[:,0] != self.currentFile.keys()[0]]
+        if self.currentFile.keys()[0] in inFiles[1:,1]:        
+            files = inFiles[inFiles[:,1] != self.currentFile.keys()[0]]
             if np.shape(files)[0] > 1:
                 files[1,3] = self.folderControl.GetValue()
                 files[1,4] = "Simulation Report.csv"
@@ -1710,14 +1709,15 @@ class MainFrame(wx.Frame):
         newDict = collections.OrderedDict()
         keys = []
         for item in self.dictionary.keys():
-
-            if item == self.currentFile.keys()[0]:
-                pass
-            else:
+            if item in files[1:,1]:
                 newDict[item] = self.dictionary[item]
-                keys.append(self.currentFile)
-                
-        keys = np.delete(self.currentFiles, np.nonzero(self.currentFiles == self.currentFile.keys()[0]))
+                file = self.fileToFile.keys()[self.fileToFile.values().index(item)]
+                keys.append(file)
+                #keys.append(self.currentFile)
+        
+        #keys = np.intersect1d(self.currentFiles, files[1:,0])
+        #print "Keys: " + str(keys)
+        #print "CurrentFiles: " + str(self.currentFiles)
         wx.CallAfter(pub.sendMessage, "RemoveFiles", keys)
         wx.CallAfter(pub.sendMessage, "InputFiles", keys)
         if len(keys) > 0:
@@ -2031,6 +2031,9 @@ class InputPanel(scrolled.ScrolledPanel):
         self.dictionary = msg.data
         index = 0
         for file in self.dictionary:   
+            #print "IN FILE_TO_FILE"
+            #print self.fileNames[index]
+            #print file
             self.fileToFile[self.fileNames[index]] = file 
             index = index + 1
           
@@ -2047,7 +2050,7 @@ class InputPanel(scrolled.ScrolledPanel):
             
             self.dropDownList.Clear()
             wx.CallAfter(pub.sendMessage, "DisableDelete", True)
-            
+                    
 
 
         
@@ -2069,7 +2072,7 @@ class InputPanel(scrolled.ScrolledPanel):
         fileDict = dict()
         fileDict[self.fileToFile[self.dropDownList.GetValue()]] = currentFile
         wx.CallAfter(pub.sendMessage, "CurrentFile", fileDict)
-        
+        #print fileDict
         
         for k,v in currentFile.iteritems():
             try:
