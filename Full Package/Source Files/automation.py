@@ -1362,6 +1362,7 @@ class MainFrame(wx.Frame):
         
         
         # Setting events
+        self.Bind(wx.EVT_MENU, self.OnRun, self.menuRun)
         self.Bind(wx.EVT_MENU, self.OnAbout, self.menuAbout)
         self.Bind(wx.EVT_MENU, self.OnExit, self.menuExit)
         self.Bind(wx.EVT_MENU, self.OnNewProject, self.menuNewProject)
