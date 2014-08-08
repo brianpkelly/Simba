@@ -1323,15 +1323,16 @@ class MainFrame(wx.Frame):
         self.toolbar.AddControl(wx.StaticText(self.toolbar, wx.ID_ANY, "  "))
         self.toolbar.AddSeparator()        
         
-        self.sensitivityCheckbox = wx.CheckBox(self.toolbar, wx.ID_ANY, label = "Perform sensitivity analysis  ")
+        self.sensitivityCheckbox = wx.CheckBox(self.toolbar, wx.ID_ANY, label = "Sensitivity Analysis  ")
         self.toolbar.AddControl(self.sensitivityCheckbox)
-        
-        self.toolbar.AddSeparator()
-        self.toolbar.AddControl(wx.StaticText(self.toolbar, wx.ID_ANY, " Sensitivity Adjustment Value: "))
         self.sensitivityControl = mask.NumCtrl(self.toolbar, wx.ID_ANY, integerWidth = 2, allowNegative = False)
+        self.sensitivityControl.Disable()
         self.toolbar.AddControl(self.sensitivityControl)
         self.toolbar.AddControl(wx.StaticText(self.toolbar, wx.ID_ANY, " %"))        
-        
+        '''
+        self.toolbar.AddSeparator()
+        self.toolbar.AddControl(wx.StaticText(self.toolbar, wx.ID_ANY, " Sensitivity Adjustment: "))
+        '''
         # Setting up menu
         filemenu = wx.Menu()
         self.menuNewFile = filemenu.Append(wx.ID_NEW, "New Parameter File", "Create a new parameter file for the current project")
@@ -1777,9 +1778,10 @@ class MainFrame(wx.Frame):
     def SA_Checkbox_Event(self, e):
         if e.IsChecked():
             self.performSensitivityAnalysis = True
+            self.sensitivityControl.Enable()
         else:
             self.performSensitivityAnalysis = False
-
+            self.sensitivityControl.Disable()
     
     
         
