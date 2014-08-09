@@ -20,6 +20,7 @@ def dependencies_for_simulation(): #missing imports needs to convert to .exe
 
 def Simulation(dict_in):
 
+    warningDict = dict()
     #limit variables NOT PARAMETERS
     is_batt_power = False
     is_motor_power = False
@@ -815,12 +816,13 @@ def Simulation(dict_in):
  
 
         dict_in[file] = newData
+        warningDict[file] = warnings
         logging.info("Converted %s to a dictionary successfully", file)
         wx.CallAfter(pub.sendMessage, "update", "")
 
         
     logging.info("ENDING Simulation.py")
-    return dict_in, warnings
+    return dict_in, warningDict
 
 
     

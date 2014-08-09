@@ -39,11 +39,12 @@ def SensitivityAnalysis(dictionary, sensitivityValue):
 
     global closeWorkerThread
     parameterDict = collections.OrderedDict()
-    
+    warningDict = collections.OrderedDict()
     # Take any file since they all have the same input parameters
     for key in dictionary[dictionary.keys()[0]]:
         if not isinstance(dictionary[dictionary.keys()[0]][key][0],basestring):
             outputFiles = []
+            warningFiles = []
             originalDictionary = deepcopy(dictionary)
             
             # Plus x% from the current key in each file
@@ -52,8 +53,11 @@ def SensitivityAnalysis(dictionary, sensitivityValue):
                 
                 # Probably a bad solution to allow for the renaming of keys...
                 dictionary[file][key] = originalData * (1.0 + sensitivityValue)
-                
-            outputFiles.append(sim.Simulation(dictionary))
+            
+            dictionaryResults, warnings = sim.Simulation(dictionary)
+            outputFiles.append(dictionaryResults)
+            warningFiles.append(warnings)
+            #outputFiles.append(sim.Simulation(dictionary))
             dictionary = deepcopy(originalDictionary)
             
             # Minus x% from the current key in each file
@@ -61,9 +65,13 @@ def SensitivityAnalysis(dictionary, sensitivityValue):
                 originalData = dictionary[file][key]
                 dictionary[file][key] = originalData * (1.0 - sensitivityValue)
 
-            outputFiles.append(sim.Simulation(dictionary))
+            #outputFiles.append(sim.Simulation(dictionary))
+            dictionaryResults, warnings = sim.Simulation(dictionary)
+            outputFiles.append(dictionaryResults)
+            warningFiles.append(warnings)
             dictionary = deepcopy(originalDictionary)
             parameterDict[key] = outputFiles
+            warningDict[key] = warningFiles
         else:
             for file in dictionary:
                 i = 0
@@ -72,10 +80,8 @@ def SensitivityAnalysis(dictionary, sensitivityValue):
                     i += 1
         if closeWorkerThread == 1:
             return
-        
-    
-
-    return parameterDict
+            
+    return parameterDict, warningDict
     
 def CreateSortArrays(dictionary):
     
@@ -2804,7 +2810,7 @@ class SimulationThread(Thread):
             wx.CallAfter(pub.sendMessage, "TransferSensitivityValue", sensitivityValue)
             decimalEquiv = self.sensitivityControl.GetValue() / 100.0
             saDict = collections.OrderedDict()            
-            saDict = SensitivityAnalysis(deepcopy(dictionary), decimalEquiv)
+            saDict, warningDict = SensitivityAnalysis(deepcopy(dictionary), decimalEquiv)
             if type(saDict) is  None:
                 return
             arrays = CreateSortArrays(saDict)
@@ -2812,7 +2818,7 @@ class SimulationThread(Thread):
             #pub.sendMessage(("TransferSortArrays"), arrays)
             wx.CallAfter(pub.sendMessage, "TransferSADictionary", saDict)            
         
-        outputDict = sim.Simulation(deepcopy(dictionary))
+        outputDict, warnings = sim.Simulation(deepcopy(dictionary))
 
         folder = self.folderControl.GetValue()
         wx.CallAfter(pub.sendMessage, "TransferOutputDirectory", folder)
