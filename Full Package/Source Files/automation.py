@@ -39,11 +39,12 @@ def SensitivityAnalysis(dictionary, sensitivityValue):
 
     global closeWorkerThread
     parameterDict = collections.OrderedDict()
-    
+    warningDict = collections.OrderedDict()
     # Take any file since they all have the same input parameters
     for key in dictionary[dictionary.keys()[0]]:
         if not isinstance(dictionary[dictionary.keys()[0]][key][0],basestring):
             outputFiles = []
+            warningFiles = []
             originalDictionary = deepcopy(dictionary)
             
             # Plus x% from the current key in each file
@@ -52,8 +53,11 @@ def SensitivityAnalysis(dictionary, sensitivityValue):
                 
                 # Probably a bad solution to allow for the renaming of keys...
                 dictionary[file][key] = originalData * (1.0 + sensitivityValue)
-                
-            outputFiles.append(sim.Simulation(dictionary))
+            
+            dictionaryResults, warnings = sim.Simulation(dictionary)
+            outputFiles.append(dictionaryResults)
+            warningFiles.append(warnings)
+            #outputFiles.append(sim.Simulation(dictionary))
             dictionary = deepcopy(originalDictionary)
             
             # Minus x% from the current key in each file
@@ -61,9 +65,13 @@ def SensitivityAnalysis(dictionary, sensitivityValue):
                 originalData = dictionary[file][key]
                 dictionary[file][key] = originalData * (1.0 - sensitivityValue)
 
-            outputFiles.append(sim.Simulation(dictionary))
+            #outputFiles.append(sim.Simulation(dictionary))
+            dictionaryResults, warnings = sim.Simulation(dictionary)
+            outputFiles.append(dictionaryResults)
+            warningFiles.append(warnings)
             dictionary = deepcopy(originalDictionary)
             parameterDict[key] = outputFiles
+            warningDict[key] = warningFiles
         else:
             for file in dictionary:
                 i = 0
@@ -72,10 +80,8 @@ def SensitivityAnalysis(dictionary, sensitivityValue):
                     i += 1
         if closeWorkerThread == 1:
             return
-        
-    
-
-    return parameterDict
+            
+    return parameterDict, warningDict
     
 def CreateSortArrays(dictionary):
     
@@ -786,16 +792,20 @@ class SAResultsPanel(wx.Panel):
         self.parent = parent  
 
         self.sortArrays = collections.OrderedDict()
+        self.warnings = collections.OrderedDict()
         self.completeResults = collections.OrderedDict()
         self.directory = ''
         self.sensitivityValue = 0       
         self.cellBlockSize = 0
         self.inputValues = dict()
+        self.tabIndex = 0
+        self.previousCellValue = ""
         
         
         pub.subscribe(self.TransferSortArrays, ("TransferSortArrays"))
         pub.subscribe(self.TransferDictionary, ("TransferSADictionary"))
         pub.subscribe(self.TransferOutputDirectory, ("TransferOutputDirectory"))
+        pub.subscribe(self.TransferWarnings, ("TransferWarnings"))
         pub.subscribe(self.TransferSensitivityValue, ("TransferSensitivityValue"))
         pub.subscribe(self.InsertPages, ("TransferSADictionary")) 
         pub.subscribe(self.UpdateNotebook, ("DisplayOutputs"))
@@ -824,7 +834,10 @@ class SAResultsPanel(wx.Panel):
         self.pages = []
         self.outputs = []
         self.SADict = collections.OrderedDict()
-        self.notebook = wx.Notebook(self)
+        self.notebook = wx.Notebook(self) 
+        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.GetTabIndex, self.notebook)
+
+
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.notebook, 1, wx.ALL | wx.EXPAND)
         self.lowerSizer.Layout()
@@ -839,7 +852,10 @@ class SAResultsPanel(wx.Panel):
         self.SetAutoLayout(1)
 
     def TransferDictionary(self, msg):
-        self.completeResults = msg.data   
+        self.completeResults = msg.data  
+        
+    def TransferWarnings(self, msg):
+        self.warnings = msg.data
 
     def TransferSortArrays(self, msg):
         self.sortArrays = msg.data
@@ -890,6 +906,7 @@ class SAResultsPanel(wx.Panel):
             self.notebook.AddPage(self.page, file)            
         
         self.page.Update()
+        self.page.myGrid.GetGridWindow().Bind(wx.EVT_MOTION, self.onMouseOver)
         
     def CreateOutputGrid(self, page, file, sortedArray):   
         
@@ -899,6 +916,10 @@ class SAResultsPanel(wx.Panel):
         col = 0
         for parameter in sortedArray:
             if parameter[1] in self.outputs:
+
+                
+                    
+                
                 currentBlocksInRow += 1
                 #print "Current page for parameter " + parameter[1] + " is " + file
                 parameter = parameter[1]
@@ -908,6 +929,10 @@ class SAResultsPanel(wx.Panel):
                 page.myGrid.SetCellValue(row, col+1, "Input Value")
                 page.myGrid.SetCellValue(row, col+2, str(self.inputValues[file][parameter][0]))
                 page.myGrid.SetCellFont(row, col, wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.BOLD))
+    
+                if len(self.warnings[parameter][0][file]) > 0 or len(self.warnings[parameter][1][file]) > 0:
+                    ''' How about text color instead of cell background? '''
+                    page.myGrid.SetCellTextColour(row, col, '#FF0000')
     
                 # Row 1, Col 0 or 8
                 #self.parameterSizer.AddSpacer(0)
@@ -1187,7 +1212,31 @@ class SAResultsPanel(wx.Panel):
 
         page.myGrid.AutoSizeColumns()
         #page.myGrid.ForceRefresh()
+
+    def onMouseOver(self, event):
+        page = self.notebook.GetCurrentPage()
+        x,y = page.myGrid.CalcUnscrolledPosition(event.GetX(),event.GetY())
+        coords = page.myGrid.XYToCell(x,y)
+        row = coords[0]
+        col = coords[1]
+        
+        cellValue = page.myGrid.GetCellValue(row,col)
+        if cellValue:
+            if cellValue in self.warnings.keys() and self.previousCellValue != cellValue:
+                self.previousCellValue = cellValue
+                hintString = ''
+                warnings = self.warnings[cellValue][self.tabIndex][self.notebook.GetPageText(self.tabIndex)]
+                for warning in warnings:
+                    hintString = hintString + warning[10:] + '\n'
+                page.myGrid.GetGridWindow().SetToolTipString(hintString)
+        else:
+            self.previousCellValue = ""
+            page.myGrid.GetGridWindow().SetToolTipString("")
+        event.Skip()
     
+    def GetTabIndex(self, event):
+        self.tabIndex = self.notebook.GetPageText(event.GetSelection())
+        
     def SaveSA(self, e):
 
         #print parameterDict[parameterDict.keys()[0]][0]['TestTemplateOutput.csv']['Max MPH']
@@ -1385,8 +1434,9 @@ class MainFrame(wx.Frame):
         leftPanel = InputPanel(mainsplitter, style = wx.BORDER_SIMPLE | wx.TAB_TRAVERSAL)
         mainsplitter.SplitVertically(leftPanel, splitterpanel)
         windowW, windowH = wx.DisplaySize()
-        newH = windowH/1.7
-        mainsplitter.SetSashPosition(windowH - newH, True)
+        #newH = windowH/1.5
+        #mainsplitter.SetSashPosition(windowH - newH, True)
+        mainsplitter.SetSashPosition(370, True)        
         MainSizer = wx.BoxSizer(wx.VERTICAL)
         MainSizer.Add(mainsplitter, 1, wx.EXPAND | wx.ALL)
         self.SetSizer(MainSizer)
@@ -1809,20 +1859,58 @@ class InputPanel(scrolled.ScrolledPanel):
         
         #self.toolbar = wx.ToolBar(self, wx.ID_ANY, size = (2000, 32))
         #self.toolbar.SetToolBitmapSize( ( 21, 21 ) )
-        self.dropDownList = wx.ComboBox(self, -1, style = wx.CB_READONLY|wx.TRANSPARENT_WINDOW, size = (275,22))
+        self.dropDownList = wx.ComboBox(self, -1, style = wx.CB_READONLY|wx.TRANSPARENT_WINDOW, size = (235,22))
         self.Bind(wx.EVT_COMBOBOX, self.UpdateFields)
         #self.toolbar.AddControl()
         #self.toolbar.AddControl(self.dropDownList)
-        
+        ''' Used to set toolTip size'''
+        self.tipText = wx.StaticText(self, wx.ID_ANY, "")
+        self.tipText.SetToolTipString("-------------------------------------------------------------------------------")
         self.topHSizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.topHSizer.Add(wx.StaticText(self, wx.ID_ANY, "      Parameter File     "))
+        self.paramFileText = wx.StaticText(self, wx.ID_ANY, "      Parameter File     ")
+        self.topHSizer.Add(self.paramFileText)
         self.topHSizer.Add(self.dropDownList)
         
         #self.Bind(wx.EVT_TOOL_ENTER, self.resetStatusBar)
                 
-        self.values=[]
-        self.keys=[]
-        
+        self.keys_units=[["Gearing","ratio"],
+                         ["Step","seconds"],
+                         ["Total Time","seconds"],
+                         ["Top Lean Angle","degrees"],
+                         ["Tyre A"],
+                         ["Tyre B"],
+                         ["Tyre C"],
+                         ["Rolling Resistance"],
+                         ["Rider Mass","kg"],
+                         ["Bike Mass","kg"],
+                         ["Air Resistance"],
+                         ["Gravity","m/s^2"],
+                         ["Frontal Area","m^2"],
+                         ["Top Motor Current","Amps"],
+                         ["Top RPM","RPM"],
+                         ["Max Distance Travel","meters"],
+                         ["Battery Efficiency","decimal percent"],
+                         ["Motor Torque Constant","Nm/amps rms"],
+                         ["Motor RPM Constant","RPM/Voltage"],
+                         ["Motor Top Power","Watts"],
+                         ["Motor Thermal Conductivity","W/m*C"],
+                         ["Motor Heat Capacity","J/C"],
+                         ["Max Motor Temp","C"],
+                         ["Coolant Temp","C"],
+                         ["Temp Lapse Rate","deg K/km"],
+                         ["Sea Level Pressure","Pa"],
+                         ["Battery Max Current","A"],
+                         ["Max Amphours","Amphours"],
+                         ["Cell Amount in Series"],
+                         ["Distance to Altitude Lookup"],
+                         ["Distance to Speed Lookup"],
+                         ["Motor Efficiency Lookup"],
+                         ["Motor Controller Eff Lookup"],
+                         ["SOC to Voltage Lookup"],
+                         ["Throttlemap Lookup"],
+                         ["Lean Angle Lookup"],
+                         ["Chain Efficiency Lookup"],
+                         ["Corner Radius Lookup"]]
         
         
         #Create Sizers    
@@ -1834,47 +1922,18 @@ class InputPanel(scrolled.ScrolledPanel):
         self.vSizer.Add(self.topHSizer)        
         
         self.vSizer1.AddSpacer(2)
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Gearing (ratio)" ,size=(180,25)))        
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Step (seconds)",size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Total Time (seconds)" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Top Lean Angle (degrees)" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Tyre A" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Tyre B" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Tyre C" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Rolling Resistance" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Rider Mass (kg)" ,size=(180,25)))      
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Bike Mass (kg)",size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Air Resistance",size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Gravity (m/s^2)" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Frontal Area (m^2)" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Top Motor Current (amps)" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Top RPM (RPM)" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Max Distance Travel (meters)" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Battery Efficiency" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Motor Torque Constant (Nm/amps rms)" ,size=(215,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Motor RPM Constant (RPM/Voltage)" ,size=(215,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Motor Top Power (watts)" ,size=(215,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Motor Thermal Conductivity (W/m*C)" ,size=(215,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Motor Heat Capacity (J/C)" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Max Motor Temp (C)" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Coolant Temp (C)" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Temp Lapse Rate (deg K/km)" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Sea Level Pressure (Pa)" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Battery Max Current (A)" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Max Amphours (Amphours)" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Cell Amount in Series" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Distance to Altitude Lookup" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Distance to Speed Lookup" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Motor Efficiency Lookup" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Motor Controller Eff Lookup" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "SOC to Voltage Lookup" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Throttlemap Lookup" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Lean Angle Lookup" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Chain Efficiency Lookup" ,size=(180,25)))
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Corner Radius Lookup", size=(180,25)))
-
+        
+        keyIndex = 0
+        while keyIndex < len(self.keys_units):
+            self.parameterText = wx.StaticText(self, wx.ID_ANY, self.keys_units[keyIndex][0] ,size=(-1,25))
+            if len(self.keys_units[keyIndex]) == 2:
+                self.parameterText.SetToolTipString("Unit: " + self.keys_units[keyIndex][1])
+                
+            self.vSizer1.Add(self.parameterText)
+            keyIndex += 1
+        
         self.vSizer1.AddSpacer(3)
-        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Comments", size=(215,25)))
+        self.vSizer1.Add(wx.StaticText(self, wx.ID_ANY, "Comments", size=(-1,25)))
  
         
         self.vSizer2 = wx.BoxSizer(wx.VERTICAL)
@@ -1917,7 +1976,7 @@ class InputPanel(scrolled.ScrolledPanel):
         self.p35 = wx.TextCtrl(self, size=(150,25))
         self.p36 = wx.TextCtrl(self, size=(150,25))
         self.p37 = wx.TextCtrl(self, size=(150,25))
-        self.comments = wx.TextCtrl(self, size = (390,160), style = wx.TE_MULTILINE)
+        self.comments = wx.TextCtrl(self, size = (370,160), style = wx.TE_MULTILINE)
         
         self.textCtrlList = (self.p0, self.p1, self.p2, self.p3, self.p4, self.p5,
                         self.p6, self.p7, self.p8, self.p9, self.p10, self.p11,
@@ -2804,15 +2863,15 @@ class SimulationThread(Thread):
             wx.CallAfter(pub.sendMessage, "TransferSensitivityValue", sensitivityValue)
             decimalEquiv = self.sensitivityControl.GetValue() / 100.0
             saDict = collections.OrderedDict()            
-            saDict = SensitivityAnalysis(deepcopy(dictionary), decimalEquiv)
+            saDict, warningDict = SensitivityAnalysis(deepcopy(dictionary), decimalEquiv)
             if type(saDict) is  None:
                 return
             arrays = CreateSortArrays(saDict)
             wx.CallAfter(pub.sendMessage, "TransferSortArrays", arrays)
-            #pub.sendMessage(("TransferSortArrays"), arrays)
+            wx.CallAfter(pub.sendMessage, "TransferWarnings", warningDict)
             wx.CallAfter(pub.sendMessage, "TransferSADictionary", saDict)            
         
-        outputDict = sim.Simulation(deepcopy(dictionary))
+        outputDict, warnings = sim.Simulation(deepcopy(dictionary))
 
         folder = self.folderControl.GetValue()
         wx.CallAfter(pub.sendMessage, "TransferOutputDirectory", folder)

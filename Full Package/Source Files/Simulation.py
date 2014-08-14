@@ -20,6 +20,7 @@ def dependencies_for_simulation(): #missing imports needs to convert to .exe
 
 def Simulation(dict_in):
 
+    warningDict = dict()
     #limit variables NOT PARAMETERS
     is_batt_power = False
     is_motor_power = False
@@ -443,7 +444,8 @@ def Simulation(dict_in):
         
         
 
-        message = '';        
+        message = '';   
+        warnings = []
         
         #Make sure parameters don't extend lookups
         if np.max(distancetospeed_lookup.x) < max_distance_travel:
@@ -451,6 +453,7 @@ def Simulation(dict_in):
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: max_distance_travel greater than speed to distance look up --- '
             message += 'max_distance_travel changed to ' + repr(max_distance_travel) + " for file " + file
+            warnings.append(message)
             wx.CallAfter(pub.sendMessage, "AddStatus", message) 
 
         if np.max(distancetoaltitude_lookup.x) < max_distance_travel:
@@ -458,6 +461,7 @@ def Simulation(dict_in):
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: max_distance_travel greater than altitude to distance look up --- '
             message += 'max_distance_travel changed to ' + repr(max_distance_travel) + " for file " + file
+            warnings.append(message)
             wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         if np.max(throttlemap.x) < top_rpm:
@@ -465,6 +469,7 @@ def Simulation(dict_in):
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: top rpm is greater than throttle map look up --- '
             message += 'top rpm changed to ' + repr(top_rpm) + " for file " + file
+            warnings.append(message)
             wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         (x,y) = motor_eff_grid.shape
@@ -475,6 +480,7 @@ def Simulation(dict_in):
             message += 'WARNING: top_torque greater than motor efficiency look up --- '
             message += 'top_torque changed to ' + repr(top_torque) + ', top_motor_current changed to ' + repr(top_motor_current)
             message += " for file " + file
+            warnings.append(message)
             wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         if x-1 <  top_rpm:
@@ -482,6 +488,7 @@ def Simulation(dict_in):
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: top_rpm greater than motor efficiency look up --- '
             message += 'top_rpm changed to ' + repr(top_rpm) + " for file " + file
+            warnings.append(message)
             wx.CallAfter(pub.sendMessage, "AddStatus", message)
 
         (x,y) = motor_controller_eff_grid.shape
@@ -490,10 +497,11 @@ def Simulation(dict_in):
             top_motor_current = y-1
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: possible arms (from top_torque and motor torque constant) is greater than motor controller efficiency look up --- '
-            message += 'top_torque changed to ' + repr(top_torque) + ' for file ' + file
-            message = datetime.now().strftime('%H:%M:%S') + ": "
+            message += 'top_torque changed to ' + repr(top_torque) + ' for file ' + file + '\n'
+            message += datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: possible arms (from top_motor_current and motor torque constant) is greater than motor controller efficiency look up --- '
             message += 'top_motor_current changed to ' + repr(top_motor_current) + ' for file ' + file
+            warnings.append(message)
             wx.CallAfter(pub.sendMessage, "AddStatus", message)
     
         if x-1 <  (top_rpm/(motor_rpm_constant)*(1/(sqrt2))) :
@@ -501,6 +509,7 @@ def Simulation(dict_in):
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: possible Vrms (from top_rpm and motor rpm constant) is greater than motor controller efficiency look up --- '
             message += 'top_rpm changed to ' + repr(top_rpm) + ' for file ' + file
+            warnings.append(message)
             wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         if np.max(lean_angle_lookup.x) < max_distance_travel:
@@ -508,6 +517,7 @@ def Simulation(dict_in):
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: max_distance_travel greater than lean angle to distance look up --- '
             message += 'max_distance_travel changed to ' + repr(max_distance_travel) + ' for file ' + file
+            warnings.append(message)
             wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         if np.max(chain_efficiency_map.x) < top_rpm:
@@ -515,6 +525,7 @@ def Simulation(dict_in):
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: top rpm is greater than the chain efficiency look up --- '
             message += 'top rpm changed to ' + repr(top_rpm) + ' for file ' + file
+            warnings.append(message)
             wx.CallAfter(pub.sendMessage, "AddStatus", message)
         
         if np.max(cornerradius.x) < max_distance_travel:
@@ -522,6 +533,7 @@ def Simulation(dict_in):
             message = datetime.now().strftime('%H:%M:%S') + ": "
             message += 'WARNING: max_distance_travel is greater than cornerradius to distance look up --- '
             message += 'max_distance_travel changed to ' + repr(max_distance_travel) + ' for file ' + file
+            warnings.append(message)
             wx.CallAfter(pub.sendMessage, "AddStatus", message)
             
         wx.CallAfter(pub.sendMessage, "update", "")   
@@ -804,12 +816,13 @@ def Simulation(dict_in):
  
 
         dict_in[file] = newData
+        warningDict[file] = warnings
         logging.info("Converted %s to a dictionary successfully", file)
         wx.CallAfter(pub.sendMessage, "update", "")
 
         
     logging.info("ENDING Simulation.py")
-    return dict_in
+    return dict_in, warningDict
 
 
     
