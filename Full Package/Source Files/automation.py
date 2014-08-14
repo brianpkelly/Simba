@@ -799,6 +799,7 @@ class SAResultsPanel(wx.Panel):
         self.cellBlockSize = 0
         self.inputValues = dict()
         self.tabIndex = 0
+        self.previousCellValue = ""
         
         
         pub.subscribe(self.TransferSortArrays, ("TransferSortArrays"))
@@ -1213,21 +1214,24 @@ class SAResultsPanel(wx.Panel):
         #page.myGrid.ForceRefresh()
 
     def onMouseOver(self, event):
-        print "Mouse over event"
         page = self.notebook.GetCurrentPage()
         x,y = page.myGrid.CalcUnscrolledPosition(event.GetX(),event.GetY())
         coords = page.myGrid.XYToCell(x,y)
         row = coords[0]
         col = coords[1]
+        
         cellValue = page.myGrid.GetCellValue(row,col)
         if cellValue:
-            if cellValue in self.warnings.keys():
+            if cellValue in self.warnings.keys() and self.previousCellValue != cellValue:
+                self.previousCellValue = cellValue
                 hintString = ''
                 warnings = self.warnings[cellValue][self.tabIndex][self.notebook.GetPageText(self.tabIndex)]
                 for warning in warnings:
                     hintString = hintString + warning[10:] + '\n'
-                    
                 page.myGrid.GetGridWindow().SetToolTipString(hintString)
+        else:
+            self.previousCellValue = ""
+            page.myGrid.GetGridWindow().SetToolTipString("")
         event.Skip()
     
     def GetTabIndex(self, event):
@@ -1859,7 +1863,9 @@ class InputPanel(scrolled.ScrolledPanel):
         self.Bind(wx.EVT_COMBOBOX, self.UpdateFields)
         #self.toolbar.AddControl()
         #self.toolbar.AddControl(self.dropDownList)
-        
+        ''' Used to set toolTip size'''
+        self.tipText = wx.StaticText(self, wx.ID_ANY, "")
+        self.tipText.SetToolTipString("-------------------------------------------------------------------------------")
         self.topHSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.paramFileText = wx.StaticText(self, wx.ID_ANY, "      Parameter File     ")
         self.topHSizer.Add(self.paramFileText)
@@ -1922,6 +1928,7 @@ class InputPanel(scrolled.ScrolledPanel):
             self.parameterText = wx.StaticText(self, wx.ID_ANY, self.keys_units[keyIndex][0] ,size=(-1,25))
             if len(self.keys_units[keyIndex]) == 2:
                 self.parameterText.SetToolTipString("Unit: " + self.keys_units[keyIndex][1])
+                
             self.vSizer1.Add(self.parameterText)
             keyIndex += 1
         
