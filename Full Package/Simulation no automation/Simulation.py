@@ -17,7 +17,7 @@ step = .5       #time step in seconds
 total_time = 3600.0
 
 #wheel_radius = 0.323596 #meters
-gearing = 1.0
+gearing = 2.174
 
 rider_mass = 90.0 
 bike_mass = 215.0 #kg
@@ -26,55 +26,56 @@ gravity = 9.81
 
 air_resistance = .38
 #air_density = 1.204 #now calculated based on altitude
-frontal_area =  1 #m^2
+frontal_area =  0.7 #m^2
 
 rolling_resistance = 0.02973
 
 #top_torque = 240.0 #nm no longer used calculatede below
-top_rpm = 1800
+top_rpm = 34416
 
-motor_top_power = 10000000.0
+motor_top_power = 60000.0
 max_distance_travel = 20000.0 #meters this needs to be calculated from lookups
 
 #chain_efficiency = .98 #no longer used with new lookup table
 battery_efficiency = 1.0
 
 motor_torque_constant = 1.0   #torque to current constant of motor. torque/amp
-motor_rpm_constant = 1.0   #rpm to voltage dc constant of motor. rpm/volt
+motor_rpm_constant = 12.0   #rpm to voltage dc constant of motor. rpm/volt
 
-series_cells = 1000000.0
+series_cells = 108.0
 
-max_amphour = 1000000.0
+max_amphour = 40.0
 
-batt_max_current = 10000000.0
+batt_max_current = 209
 
 
-motor_thermal_conductivity = 10000000
-motor_heat_capacity = float('inf')
+motor_thermal_conductivity = 24
+motor_heat_capacity = 4000
 coolant_temp = 20
-max_motor_temp = 10000000
+max_motor_temp = 100
 
 
 #wheel_radius = tyreA*lean_angle**2 + tyreB*lean_angle + TyreC
-tyreA = 0
-tyreB = 0
-TyreC = 9.54
+tyreA = -2.07e-05
+tyreB = 6.39e-06
+TyreC = 0.32
+tyre_pressure = 2.25 #Bar
 
-top_lean_angle = 90
+top_lean_angle = 35
 
-top_motor_current = 3250 #Amps
+top_motor_current = 240 #Amps
 temp_lapse_rate = 6.5
 sea_level_pressure = 101325
 
 
 #lookup files
-dist_to_speed_lookup = 'pikes_peak_zackrace_disttospeed.csv'
-dist_to_alt_lookup = 'disttoalt_pp.csv'
-motor_controller_eff_lookup = 'simple_cont_eff.csv'
-motor_eff_lookup = 'simple_motor_eff.csv'
-soc_to_voltage_lookup = 'simple_bat.csv'
-throttlemap_lookup = 'simple_throttle.csv'
-lean_angle_lookup = 'no_lean.csv'
+dist_to_speed_lookup = 'IOM_data.csv'
+dist_to_alt_lookup = 'disttoalt.csv'
+motor_controller_eff_lookup = 'Tritium_ws200_eff.csv'
+motor_eff_lookup = 'Emrax_eff.csv'
+soc_to_voltage_lookup = 'aee.csv'
+throttlemap_lookup = 'throttle.csv'
+lean_angle_lookup = 'pp_lean.csv'
 corner_radius_lookup = 'pikespeakradius.csv'
 chain_eff_lookup = 'chain_eff_30kW.csv'
 
@@ -224,7 +225,7 @@ wheel_radius = np.zeros((steps+1,tests),dtype=float)
 lean_angle_limit = np.zeros((steps+1,tests),dtype=float)
 
 lateral_acc = np.zeros((steps+1,tests),dtype=float)
-
+rolling_resistance = np.zeros((steps+1,tests),dtype=float)
 
 
 
@@ -309,7 +310,8 @@ def Force(s,n):
     drag[n+1] = 0.5 * drag_area*air_density[n+1]*s**2
     slope[n+1] = (altitude[n+1] - altitude[n])/(distance[n+1] - distance[n])    
     incline[n+1] = mass*gravity*slope[n+1]
-    rolling[n+1] = mass*gravity*rolling_resistance
+    rolling[n+1] = mass*gravity*rolling_resistance[n+1]
+    print rolling_resistance[n+1]
     return np.max([0,(acceleration[n+1] + drag[n+1] + incline[n+1] + rolling[n+1])])
 
 #Find Efficiency given speed, force, power at point n+1
@@ -382,7 +384,14 @@ def Wheel_Radius(lean,n):
         lean = top_lean_angle
         lean_angle_limit[n+1] = 1
     return tyreA*lean**2 + tyreB*lean + TyreC
- 
+
+def Rolling_Resistance(s):
+    s = s * 1.60934 #conversion to km/h
+    if s <= 165: #km/h
+        return 0.0085 + (0.018/tyre_pressure) + ((1.59*10**-6.0)/tyre_pressure) * (s**2)
+    else:
+        return (0.018/tyre_pressure) + ((2.91*10**-6.0)/tyre_pressure) * (s**2)
+
 #initial condidtions
 distance[0] = .1 #can't be 0 because not in look up
 speed[0] = .1 #can't be 0 or the bike will never start moving
@@ -394,7 +403,7 @@ air_density[0] = (pressure[0] * 28.9644) / (8.31432 * (ambient_temp[0]+273.15) *
 temp_lapse_rate = -6.5/1000.0
 
 voltage[0] = soctovoltage_lookup(0) * series_cells
-
+rolling_resistance[0] = 0
 
 def loop(n):
     for n in range(steps):
@@ -404,7 +413,7 @@ def loop(n):
             return n                                #stop if cross finish line
         
         wheel_radius[n+1] = Wheel_Radius(lean_angle_lookup(distance[n+1]), n)
-        
+        rolling_resistance[n+1] = Rolling_Resistance(speed[n])
         voltage[n+1] = Battery_Voltage(n)           #find battery voltage
         top_force[n+1] = Top_force(n)               #Top_force at this point
         top_speed[n+1] = Top_speed(n)               #Top_speed at this point

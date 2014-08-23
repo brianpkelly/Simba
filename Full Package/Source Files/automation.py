@@ -1880,7 +1880,7 @@ class InputPanel(scrolled.ScrolledPanel):
                          ["Tyre A"],
                          ["Tyre B"],
                          ["Tyre C"],
-                         ["Rolling Resistance"],
+                         ["Tyre Pressure"],
                          ["Rider Mass","kg"],
                          ["Bike Mass","kg"],
                          ["Air Resistance"],
@@ -2171,7 +2171,7 @@ class InputPanel(scrolled.ScrolledPanel):
         except:
             self.p6.ChangeValue('')
         try:
-            self.p7.ChangeValue(str(currentFile["rolling_resistance"][0]))
+            self.p7.ChangeValue(str(currentFile["tyre_pressure"][0]))
         except:
             self.p7.ChangeValue('')
         try:
@@ -2283,7 +2283,7 @@ class InputPanel(scrolled.ScrolledPanel):
         except:
             self.p34.ChangeValue('')
         try:
-            self.p35.ChangeValue(str(currentFile["lean_angle_lookup"][0]))
+            self.p35.ChangeValue(str(currentFile["lean_angle_lookup"][0])) 
         except:
             self.p35.ChangeValue('')
         try:
@@ -2372,10 +2372,10 @@ class InputPanel(scrolled.ScrolledPanel):
         
     def UpdateP7 (self, e):
         try:
-            previousValue = self.dictionary[self.fileToFile[self.dropDownList.GetValue()]]['rolling_resistance'][0]
-            self.dictionary[self.fileToFile[self.dropDownList.GetValue()]]['rolling_resistance'] = [self.p7.GetValue()]
+            previousValue = self.dictionary[self.fileToFile[self.dropDownList.GetValue()]]['tyre_pressure'][0]
+            self.dictionary[self.fileToFile[self.dropDownList.GetValue()]]['tyre_pressure'] = [self.p7.GetValue()]
             pub.sendMessage(("DictFromInput"), self.dictionary)
-            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Rolling Resistance changed from " + str(previousValue) + " to " + self.p7.GetValue()
+            msg = datetime.now().strftime('%H:%M:%S') + ": " + "Tyre Pressure changed from " + str(previousValue) + " to " + self.p7.GetValue()
             pub.sendMessage(("AddStatus"), msg)
         except:
             pass
@@ -2590,7 +2590,7 @@ class InputPanel(scrolled.ScrolledPanel):
             msg = datetime.now().strftime('%H:%M:%S') + ": " + "Cell Amount in Series changed from " + str(previousValue) + " to " + self.p28.GetValue()
             pub.sendMessage(("AddStatus"), msg)
         except:
-            pass  
+            pass
         
     def UpdateP29 (self, e):
         try:
@@ -2681,6 +2681,7 @@ class InputPanel(scrolled.ScrolledPanel):
             pub.sendMessage(("AddStatus"), msg)
         except:
             pass
+        
         
     def UpdateComments (self, e):
         try:
