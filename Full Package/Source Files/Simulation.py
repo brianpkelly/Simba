@@ -198,6 +198,10 @@ def Simulation(dict_in):
         logging.info("sea_level_pressure")
         sea_level_pressure = currentData["sea_level_pressure"][0]
         
+        assert "tyre_pressure" in currentData, logging.critical("%s is missing data: tyre_pressure" % file)
+        logging.info("tyre_pressure")
+        tyre_pressure = currentData["tyre_pressure"][0]
+        
         #top_lean_angle = 45
         #temp_lapse_rate = 6.5
         #sea_level_pressure = 101325
@@ -440,7 +444,8 @@ def Simulation(dict_in):
         
         wheel_radius = np.zeros((steps+1,tests),dtype=float)
         lean_angle_limit = np.zeros((steps+1,tests),dtype=float)
-        lateral_acc = np.zeros((steps+1, tests), dtype=float)        
+        lateral_acc = np.zeros((steps+1, tests), dtype=float)      
+        rolling_resistance = np.zeros((steps+1, tests), dtype=float)
         
         
 
@@ -570,7 +575,7 @@ def Simulation(dict_in):
             drag[n+1] = 0.5 * drag_area*air_density[n+1]*s**2
             slope[n+1] = (altitude[n+1] - altitude[n])/(distance[n+1] - distance[n])    
             incline[n+1] = mass*gravity*slope[n+1]
-            rolling[n+1] = mass*gravity*rolling_resistance
+            rolling[n+1] = mass*gravity*rolling_resistance[n+1]
             return np.max([0,(acceleration[n+1] + drag[n+1] + incline[n+1] + rolling[n+1])])
         
         #Find Efficiency given speed, force, power at point n+1
@@ -645,6 +650,13 @@ def Simulation(dict_in):
                 lean_angle_limit[n+1] = 1
             return tyreA*lean**2 + tyreB*lean + TyreC
 
+        def Rolling_Resistance(s):
+            s = s * 1.60934 #conversion to km/h
+            if s <= 165: #km/h
+                return 0.0085 + (0.018/tyre_pressure) + ((1.59*10**-6.0)/tyre_pressure) * (s**2)
+            else:
+                return (0.018/tyre_pressure) + ((2.91*10**-6.0)/tyre_pressure) * (s**2)
+                
         #initial condidtions
         distance[0] = .1 #can't be 0 because not in look up
         speed[0] = .1 #can't be 0 or the bike will never start moving
@@ -655,7 +667,7 @@ def Simulation(dict_in):
 
         temp_lapse_rate = -6.5/1000.0
         voltage[0] = soctovoltage_lookup(0) * series_cells
-        
+        rolling_resistance[0] = 0
 
         def loop(n):
             for n in range(steps):
@@ -666,6 +678,7 @@ def Simulation(dict_in):
                     
                 wheel_radius[n+1] = Wheel_Radius(lean_angle_lookup(distance[n+1]), n)
                 voltage[n+1] = Battery_Voltage(n)
+                rolling_resistance[n+1] = Rolling_Resistance(speed[n])
                 top_force[n+1] = Top_force(n)
                 top_speed[n+1] = Top_speed(n)
                 top_power[n+1] = Top_power(n)
