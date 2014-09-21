@@ -69,7 +69,7 @@ sea_level_pressure = 101325
 
 
 #lookup files
-dist_to_speed_lookup = 'IOM_data.csv'
+dist_to_speed_lookup = 'iom_data.csv'
 dist_to_alt_lookup = 'disttoalt.csv'
 motor_controller_eff_lookup = 'Tritium_ws200_eff.csv'
 motor_eff_lookup = 'Emrax_eff.csv'
